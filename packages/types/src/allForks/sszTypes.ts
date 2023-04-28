@@ -60,7 +60,6 @@ export const allForksExecution = {
     ExecutionPayloadHeader: bellatrix.ExecutionPayloadHeader,
     BuilderBid: bellatrix.BuilderBid,
     SignedBuilderBid: bellatrix.SignedBuilderBid,
-    SSEPayloadAttributes: bellatrix.SSEPayloadAttributes,
   },
   capella: {
     BeaconBlockBody: capella.BeaconBlockBody,
@@ -72,7 +71,6 @@ export const allForksExecution = {
     ExecutionPayloadHeader: capella.ExecutionPayloadHeader,
     BuilderBid: capella.BuilderBid,
     SignedBuilderBid: capella.SignedBuilderBid,
-    SSEPayloadAttributes: capella.SSEPayloadAttributes,
   },
   deneb: {
     BeaconBlockBody: deneb.BeaconBlockBody,
@@ -83,7 +81,6 @@ export const allForksExecution = {
     ExecutionPayloadHeader: deneb.ExecutionPayloadHeader,
     BuilderBid: deneb.BuilderBid,
     SignedBuilderBid: deneb.SignedBuilderBid,
-    SSEPayloadAttributes: capella.SSEPayloadAttributes,
   },
 };
 

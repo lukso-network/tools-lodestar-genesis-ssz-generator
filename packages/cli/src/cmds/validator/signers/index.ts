@@ -1,16 +1,14 @@
-import path from "node:path";
 import bls from "@chainsafe/bls";
 import {deriveEth2ValidatorKeys, deriveKeyFromMnemonic} from "@chainsafe/bls-keygen";
 import {interopSecretKey} from "@lodestar/state-transition";
 import {externalSignerGetKeys, Signer, SignerType} from "@lodestar/validator";
 import {toHexString} from "@chainsafe/ssz";
-import {Logger} from "@lodestar/utils";
-import {defaultNetwork, GlobalArgs} from "../../../options/index.js";
+import {ILogger} from "@lodestar/utils";
+import {defaultNetwork, IGlobalArgs} from "../../../options/index.js";
 import {assertValidPubkeysHex, isValidHttpUrl, parseRange, YargsError} from "../../../util/index.js";
 import {getAccountPaths} from "../paths.js";
 import {IValidatorCliArgs} from "../options.js";
-import {PersistedKeysBackend} from "../keymanager/persistedKeys.js";
-import {decryptKeystoreDefinitions} from "../keymanager/decryptKeystoreDefinitions/index.js";
+import {decryptKeystoreDefinitions, PersistedKeysBackend} from "../keymanager/persistedKeys.js";
 import {showProgress} from "../../../util/progress.js";
 import {importKeystoreDefinitionsFromExternalDir, readPassphraseOrPrompt} from "./importExternalKeystores.js";
 
@@ -42,12 +40,10 @@ const KEYSTORE_IMPORT_PROGRESS_MS = 10000;
  * - Remote signer definition imported from keymanager api
  */
 export async function getSignersFromArgs(
-  args: IValidatorCliArgs & GlobalArgs,
+  args: IValidatorCliArgs & IGlobalArgs,
   network: string,
-  {logger, signal}: {logger: Pick<Logger, "info" | "warn" | "debug">; signal: AbortSignal}
+  {logger, signal}: {logger: Pick<ILogger, "info">; signal: AbortSignal}
 ): Promise<Signer[]> {
-  const accountPaths = getAccountPaths(args, network);
-
   // ONLY USE FOR TESTNETS - Derive interop keys
   if (args.interopIndexes) {
     const indexes = parseRange(args.interopIndexes);
@@ -96,10 +92,9 @@ export async function getSignersFromArgs(
       },
     });
     return decryptKeystoreDefinitions(keystoreDefinitions, {
-      ignoreLockFile: args.force,
+      ...args,
       onDecrypt: needle,
-      cacheFilePath: path.join(accountPaths.cacheDir, "imported_keystores.cache"),
-      logger,
+      cacheFilePath: `${args.importKeystores[0]}.cache`,
     });
   }
 
@@ -110,6 +105,7 @@ export async function getSignersFromArgs(
 
   // Read keys from local account manager
   else {
+    const accountPaths = getAccountPaths(args, network);
     const persistedKeysBackend = new PersistedKeysBackend(accountPaths);
 
     // Read and decrypt local keystores, imported via keymanager api or import cmd
@@ -127,12 +123,10 @@ export async function getSignersFromArgs(
         );
       },
     });
-
     const keystoreSigners = await decryptKeystoreDefinitions(keystoreDefinitions, {
-      ignoreLockFile: args.force,
+      ...args,
       onDecrypt: needle,
-      cacheFilePath: path.join(accountPaths.cacheDir, "local_keystores.cache"),
-      logger,
+      cacheFilePath: `${accountPaths.keystoresDir}.cache`,
     });
 
     // Read local remote keys, imported via keymanager api
@@ -153,7 +147,7 @@ export function getSignerPubkeyHex(signer: Signer): string {
   }
 }
 
-async function getRemoteSigners(args: IValidatorCliArgs & GlobalArgs): Promise<Signer[]> {
+async function getRemoteSigners(args: IValidatorCliArgs & IGlobalArgs): Promise<Signer[]> {
   const externalSignerUrl = args["externalSigner.url"];
   if (!externalSignerUrl) {
     throw new YargsError("Must set externalSignerUrl with externalSignerPublicKeys");

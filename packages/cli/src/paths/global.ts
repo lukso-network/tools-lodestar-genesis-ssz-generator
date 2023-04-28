@@ -1,9 +1,9 @@
-import {GlobalArgs} from "../options/index.js";
+import {IGlobalArgs} from "../options/index.js";
 import {getDefaultDataDir} from "./rootDir.js";
 
-export type GlobalPaths = {
+export interface IGlobalPaths {
   dataDir: string;
-};
+}
 
 /**
  * Defines the path structure of the globally used files
@@ -13,7 +13,7 @@ export type GlobalPaths = {
  * └── $paramsFile
  * ```
  */
-export function getGlobalPaths(args: Partial<GlobalArgs>, network: string): GlobalPaths {
+export function getGlobalPaths(args: Partial<IGlobalArgs>, network: string): IGlobalPaths {
   // Set dataDir to network name iff dataDir is not set explicitly
   const dataDir = args.dataDir || getDefaultDataDir(network);
   return {

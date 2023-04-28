@@ -2,13 +2,13 @@ import {PeerId} from "@libp2p/interface-peer-id";
 import {createSecp256k1PeerId} from "@libp2p/peer-id-factory";
 import {expect} from "chai";
 import {BitArray} from "@chainsafe/ssz";
-import {createBeaconConfig, createChainForkConfig, ChainForkConfig} from "@lodestar/config";
+import {createIBeaconConfig, createIChainForkConfig, IChainForkConfig} from "@lodestar/config";
 import {chainConfig} from "@lodestar/config/default";
 import {
   Encoding,
   RequestError,
   RequestErrorCode,
-  RequestErrorMetadata,
+  IRequestErrorMetadata,
   HandlerTypeFromMessage,
   EncodedPayloadType,
   EncodedPayload,
@@ -19,7 +19,7 @@ import {allForks, altair, phase0, Root, ssz} from "@lodestar/types";
 import {sleep as _sleep} from "@lodestar/utils";
 import {GossipHandlers} from "../../../src/network/gossip/index.js";
 import {Network, ReqRespBeaconNodeOpts} from "../../../src/network/index.js";
-import {defaultNetworkOptions, NetworkOptions} from "../../../src/network/options.js";
+import {defaultNetworkOptions, INetworkOptions} from "../../../src/network/options.js";
 import {ReqRespHandlers} from "../../../src/network/reqresp/handlers/index.js";
 import {ReqRespMethod} from "../../../src/network/reqresp/types.js";
 import {expectRejectedWithLodestarError} from "../../utils/errors.js";
@@ -37,7 +37,7 @@ describe("network / ReqResp", function () {
   this.retries(2); // This test fail sometimes, with a 5% rate.
 
   const multiaddr = "/ip4/127.0.0.1/tcp/0";
-  const networkOptsDefault: NetworkOptions = {
+  const networkOptsDefault: INetworkOptions = {
     ...defaultNetworkOptions,
     maxPeers: 1,
     targetPeers: 1,
@@ -50,13 +50,13 @@ describe("network / ReqResp", function () {
   };
 
   // Schedule ALTAIR_FORK_EPOCH to trigger registering lightclient ReqResp protocols immediately
-  const config = createChainForkConfig({
+  const config = createIChainForkConfig({
     ...chainConfig,
     ALTAIR_FORK_EPOCH: 0,
   });
 
   const state = generateState({}, config);
-  const beaconConfig = createBeaconConfig(config, state.genesisValidatorsRoot);
+  const beaconConfig = createIBeaconConfig(config, state.genesisValidatorsRoot);
   const chain = new MockBeaconChain({genesisTime: 0, chainId: 0, networkId: BigInt(0), state, config: beaconConfig});
   const db = new StubbedBeaconDb();
 
@@ -290,12 +290,10 @@ describe("network / ReqResp", function () {
       expect(
         ssz.altair.LightClientUpdate.equals(
           returnedUpdate,
-          (
-            lightClientUpdates[i] as {
-              type: EncodedPayloadType.ssz;
-              data: altair.LightClientUpdate;
-            }
-          ).data
+          (lightClientUpdates[i] as {
+            type: EncodedPayloadType.ssz;
+            data: altair.LightClientUpdate;
+          }).data
         )
       ).to.equal(true, `Wrong returnedUpdate[${i}]`);
     }
@@ -429,16 +427,16 @@ describe("network / ReqResp", function () {
 });
 
 /** Helper to reduce code-duplication */
-function formatMetadata(method: ReqRespMethod, encoding: Encoding, peer: PeerId): RequestErrorMetadata {
+function formatMetadata(method: ReqRespMethod, encoding: Encoding, peer: PeerId): IRequestErrorMetadata {
   return {method, encoding, peer: peer.toString()};
 }
 
-function getEmptyEncodedPayloadSignedBeaconBlock(config: ChainForkConfig): EncodedPayload<allForks.SignedBeaconBlock> {
+function getEmptyEncodedPayloadSignedBeaconBlock(config: IChainForkConfig): EncodedPayload<allForks.SignedBeaconBlock> {
   return wrapBlockAsEncodedPayload(config, config.getForkTypes(0).SignedBeaconBlock.defaultValue());
 }
 
 function wrapBlockAsEncodedPayload(
-  config: ChainForkConfig,
+  config: IChainForkConfig,
   block: allForks.SignedBeaconBlock
 ): EncodedPayload<allForks.SignedBeaconBlock> {
   return {

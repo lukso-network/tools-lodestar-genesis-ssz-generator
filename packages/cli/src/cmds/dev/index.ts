@@ -1,9 +1,9 @@
-import {CliCommand, CliCommandOptions} from "../../util/index.js";
-import {GlobalArgs} from "../../options/index.js";
+import {ICliCommand, ICliCommandOptions} from "../../util/index.js";
+import {IGlobalArgs} from "../../options/index.js";
 import {devOptions, IDevArgs} from "./options.js";
 import {devHandler} from "./handler.js";
 
-export const dev: CliCommand<IDevArgs, GlobalArgs> = {
+export const dev: ICliCommand<IDevArgs, IGlobalArgs> = {
   command: "dev",
   describe: "Quickly bootstrap a beacon node and multiple validators. Use for development and testing",
   examples: [
@@ -12,6 +12,6 @@ export const dev: CliCommand<IDevArgs, GlobalArgs> = {
       description: "Start a single beacon node with 8 interop validators",
     },
   ],
-  options: devOptions as CliCommandOptions<IDevArgs>,
+  options: devOptions as ICliCommandOptions<IDevArgs>,
   handler: devHandler,
 };

@@ -10,12 +10,12 @@ describe("Json helper", () => {
   (circularReference as {myself: unknown}).myself = circularReference;
 
   describe("toJson", () => {
-    type TestCase = {
+    interface ITestCase {
       id: string;
       arg: unknown;
       json: any;
-    };
-    const testCases: (TestCase | (() => TestCase))[] = [
+    }
+    const testCases: (ITestCase | (() => ITestCase))[] = [
       // Basic types
       {id: "undefined", arg: undefined, json: undefined},
       {id: "null", arg: null, json: "null"},
@@ -140,12 +140,12 @@ describe("Json helper", () => {
     const root = new Uint8Array(32);
     const rootHex = toHexString(root);
 
-    type TestCase = {
+    interface ITestCase {
       id: string;
       json: unknown;
       output: string;
-    };
-    const testCases: (TestCase | (() => TestCase))[] = [
+    }
+    const testCases: (ITestCase | (() => ITestCase))[] = [
       // Basic types
       {id: "null", json: null, output: "null"},
       {id: "boolean", json: true, output: "true"},

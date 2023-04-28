@@ -1,7 +1,7 @@
 import sinon from "sinon";
-import {Logger} from "@lodestar/utils";
+import {ILogger} from "@lodestar/utils";
 
-export const createStubbedLogger = (): Logger => ({
+export const createStubbedLogger = (): ILogger => ({
   debug: sinon.stub(),
   info: sinon.stub(),
   error: sinon.stub(),

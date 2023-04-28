@@ -42,7 +42,9 @@ describe("phase0 processSlashings", () => {
 /**
  * Create a state that causes `changeRatio` fraction (0,1) of validators to change their effective balance.
  */
-function getProcessSlashingsTestData(indicesToSlashLen: number): {
+function getProcessSlashingsTestData(
+  indicesToSlashLen: number
+): {
   state: CachedBeaconStateAllForks;
   epochProcess: EpochProcess;
 } {

@@ -1,6 +1,6 @@
 import path from "node:path";
 import {fileURLToPath} from "node:url";
-import {DownloadTestsOptions} from "@lodestar/spec-test-util";
+import {IDownloadTestsOptions} from "@lodestar/spec-test-util";
 
 // WARNING! Don't move or rename this file !!!
 //
@@ -14,15 +14,15 @@ import {DownloadTestsOptions} from "@lodestar/spec-test-util";
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export const ethereumConsensusSpecsTests: DownloadTestsOptions = {
-  specVersion: "v1.3.0",
+export const ethereumConsensusSpecsTests: IDownloadTestsOptions = {
+  specVersion: "v1.3.0-rc.2-hotfix",
   // Target directory is the host package root: 'packages/*/spec-tests'
   outputDir: path.join(__dirname, "../../spec-tests"),
   specTestsRepoUrl: "https://github.com/ethereum/consensus-spec-tests",
   testsToDownload: ["general", "mainnet", "minimal"],
 };
 
-export const blsSpecTests: DownloadTestsOptions = {
+export const blsSpecTests: IDownloadTestsOptions = {
   specVersion: "v0.1.1",
   // Target directory is the host package root: 'packages/*/spec-tests-bls'
   outputDir: path.join(__dirname, "../../spec-tests-bls"),

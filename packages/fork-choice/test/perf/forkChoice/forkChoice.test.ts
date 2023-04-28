@@ -3,7 +3,7 @@ import {config} from "@lodestar/config/default";
 import {AttestationData, IndexedAttestation} from "@lodestar/types/phase0";
 import {ATTESTATION_SUBNET_COUNT} from "@lodestar/params";
 import {ssz} from "@lodestar/types";
-import {fromHexString, toHexString} from "@chainsafe/ssz";
+import {fromHexString} from "@chainsafe/ssz";
 import {ExecutionStatus, ForkChoice, IForkChoiceStore, ProtoBlock, ProtoArray} from "../../../src/index.js";
 
 describe("ForkChoice", () => {
@@ -44,6 +44,10 @@ describe("ForkChoice", () => {
     const fcStore: IForkChoiceStore = {
       currentSlot: genesisSlot,
       justified: {
+        checkpoint: {epoch: genesisEpoch, root: fromHexString(finalizedRoot), rootHex: finalizedRoot},
+        balances,
+      },
+      bestJustified: {
         checkpoint: {epoch: genesisEpoch, root: fromHexString(finalizedRoot), rootHex: finalizedRoot},
         balances,
       },
@@ -160,7 +164,7 @@ describe("ForkChoice", () => {
     },
     fn: (allAttestationsPerSlot) => {
       for (const attestation of allAttestationsPerSlot) {
-        forkchoice.onAttestation(attestation, toHexString(ssz.phase0.AttestationData.hashTreeRoot(attestation.data)));
+        forkchoice.onAttestation(attestation);
       }
     },
   });

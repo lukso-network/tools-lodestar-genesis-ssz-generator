@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import {fromHexString as b} from "@chainsafe/ssz";
-import {ChainConfig} from "../types.js";
+import {IChainConfig} from "../types.js";
 import {chainConfig as mainnet} from "../presets/mainnet.js";
 
 // Ropsten beacon chain config:
 // https://github.com/eth-clients/merge-testnets/blob/main/sepolia-beacon-chain/config.yaml
 
-export const sepoliaChainConfig: ChainConfig = {
+export const sepoliaChainConfig: IChainConfig = {
   ...mainnet,
 
   CONFIG_NAME: "sepolia",

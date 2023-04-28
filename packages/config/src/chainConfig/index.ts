@@ -1,5 +1,5 @@
 import {ACTIVE_PRESET} from "@lodestar/params";
-import {ChainConfig} from "./types.js";
+import {IChainConfig} from "./types.js";
 import {defaultChainConfig} from "./default.js";
 
 export {chainConfigToJson, chainConfigFromJson, specValuesToJson} from "./json.js";
@@ -7,9 +7,9 @@ export * from "./types.js";
 export * from "./default.js";
 
 /**
- * Create an `ChainConfig`, filling in missing values with preset defaults
+ * Create an `IChainConfig`, filling in missing values with preset defaults
  */
-export function createChainConfig(input: Partial<ChainConfig>): ChainConfig {
+export function createIChainConfig(input: Partial<IChainConfig>): IChainConfig {
   const config = {
     // Set the config first with default preset values
     ...defaultChainConfig,

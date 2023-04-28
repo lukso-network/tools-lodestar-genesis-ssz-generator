@@ -44,16 +44,14 @@ describe("gossip block validation", function () {
 
     verifySignature = sinon.stub();
     verifySignature.resolves(true);
-    chain.bls = {verifySignatureSets: verifySignature, close: () => Promise.resolve(), canAcceptWork: () => true};
+    chain.bls = {verifySignatureSets: verifySignature, close: () => Promise.resolve()};
 
     forkChoice.getFinalizedCheckpoint.returns({epoch: 0, root: ZERO_HASH, rootHex: ""});
 
     // Reset seen cache
-    (
-      chain as {
-        seenBlockProposers: SeenBlockProposers;
-      }
-    ).seenBlockProposers = new SeenBlockProposers();
+    (chain as {
+      seenBlockProposers: SeenBlockProposers;
+    }).seenBlockProposers = new SeenBlockProposers();
 
     job = {signature, message: block};
   });

@@ -1,6 +1,6 @@
 import EventEmitter from "node:events";
 import {routes} from "@lodestar/api/beacon";
-import {ChainForkConfig} from "@lodestar/config";
+import {IChainForkConfig} from "@lodestar/config";
 import {Epoch, Slot} from "@lodestar/types";
 import {ApiError} from "@lodestar/api";
 import {EpochClock} from "./EpochClock.js";
@@ -19,7 +19,7 @@ import {TableReporter} from "./TableReporter.js";
 
 interface SimulationTrackerInitOptions {
   nodes: NodePair[];
-  config: ChainForkConfig;
+  config: IChainForkConfig;
   clock: EpochClock;
   signal: AbortSignal;
 }
@@ -53,7 +53,7 @@ export class SimulationTracker {
   private signal: AbortSignal;
   private nodes: NodePair[];
   private clock: EpochClock;
-  private forkConfig: ChainForkConfig;
+  private forkConfig: IChainForkConfig;
 
   private errors: SimulationAssertionError[] = [];
   private stores: StoreTypes<typeof defaultAssertions> & StoreType<string, unknown>;

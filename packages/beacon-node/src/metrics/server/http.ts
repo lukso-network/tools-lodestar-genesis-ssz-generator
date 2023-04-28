@@ -1,6 +1,6 @@
 import http from "node:http";
 import {Registry} from "prom-client";
-import {Logger} from "@lodestar/utils";
+import {ILogger} from "@lodestar/utils";
 import {wrapError} from "../../util/wrapError.js";
 import {HistogramExtra} from "../utils/histogram.js";
 import {HttpActiveSocketsTracker} from "../../api/rest/activeSockets.js";
@@ -15,7 +15,7 @@ export class HttpMetricsServer {
   private readonly server: http.Server;
   private readonly register: Registry;
   private readonly getOtherMetrics: () => Promise<string>;
-  private readonly logger: Logger;
+  private readonly logger: ILogger;
   private readonly activeSockets: HttpActiveSocketsTracker;
 
   private readonly httpServerRegister: RegistryMetricCreator;
@@ -27,7 +27,7 @@ export class HttpMetricsServer {
       register,
       getOtherMetrics = async () => "",
       logger,
-    }: {register: Registry; getOtherMetrics?: () => Promise<string>; logger: Logger}
+    }: {register: Registry; getOtherMetrics?: () => Promise<string>; logger: ILogger}
   ) {
     this.logger = logger;
     this.register = register;

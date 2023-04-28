@@ -11,7 +11,6 @@ export enum RegenCaller {
   processBlocksInEpoch = "processBlocksInEpoch",
   validateGossipAggregateAndProof = "validateGossipAggregateAndProof",
   validateGossipAttestation = "validateGossipAttestation",
-  validateGossipVoluntaryExit = "validateGossipVoluntaryExit",
   onForkChoiceFinalized = "onForkChoiceFinalized",
 }
 
@@ -22,10 +21,6 @@ export enum RegenFnName {
   getCheckpointState = "getCheckpointState",
 }
 
-export type StateCloneOpts = {
-  dontTransferCache: boolean;
-};
-
 /**
  * Regenerates states that have already been processed by the fork choice
  */
@@ -34,31 +29,18 @@ export interface IStateRegenerator {
    * Return a valid pre-state for a beacon block
    * This will always return a state in the latest viable epoch
    */
-  getPreState(
-    block: allForks.BeaconBlock,
-    opts: StateCloneOpts,
-    rCaller: RegenCaller
-  ): Promise<CachedBeaconStateAllForks>;
+  getPreState(block: allForks.BeaconBlock, rCaller: RegenCaller): Promise<CachedBeaconStateAllForks>;
 
   /**
    * Return a valid checkpoint state
    * This will always return a state with `state.slot % SLOTS_PER_EPOCH === 0`
    */
-  getCheckpointState(
-    cp: phase0.Checkpoint,
-    opts: StateCloneOpts,
-    rCaller: RegenCaller
-  ): Promise<CachedBeaconStateAllForks>;
+  getCheckpointState(cp: phase0.Checkpoint, rCaller: RegenCaller): Promise<CachedBeaconStateAllForks>;
 
   /**
    * Return the state of `blockRoot` processed to slot `slot`
    */
-  getBlockSlotState(
-    blockRoot: RootHex,
-    slot: Slot,
-    opts: StateCloneOpts,
-    rCaller: RegenCaller
-  ): Promise<CachedBeaconStateAllForks>;
+  getBlockSlotState(blockRoot: RootHex, slot: Slot, rCaller: RegenCaller): Promise<CachedBeaconStateAllForks>;
 
   /**
    * Return the exact state with `stateRoot`

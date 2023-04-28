@@ -1,6 +1,6 @@
 import {toHexString} from "@chainsafe/ssz";
 import {Slot} from "@lodestar/types";
-import {ChainForkConfig} from "@lodestar/config";
+import {IChainForkConfig} from "@lodestar/config";
 import {
   ForkChoice,
   ProtoArray,
@@ -27,7 +27,7 @@ export {ForkChoiceOpts};
  * Fork Choice extended with a ChainEventEmitter
  */
 export function initializeForkChoice(
-  config: ChainForkConfig,
+  config: IChainForkConfig,
   emitter: ChainEventEmitter,
   currentSlot: Slot,
   state: CachedBeaconStateAllForks,
@@ -81,7 +81,6 @@ export function initializeForkChoice(
         ...(isExecutionStateType(state) && isMergeTransitionComplete(state)
           ? {
               executionPayloadBlockHash: toHexString(state.latestExecutionPayloadHeader.blockHash),
-              executionPayloadNumber: state.latestExecutionPayloadHeader.blockNumber,
               executionStatus: blockHeader.slot === GENESIS_SLOT ? ExecutionStatus.Valid : ExecutionStatus.Syncing,
             }
           : {executionPayloadBlockHash: null, executionStatus: ExecutionStatus.PreMerge}),

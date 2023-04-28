@@ -1,13 +1,13 @@
 import {defaultOptions, IBeaconNodeOptions} from "@lodestar/beacon-node";
-import {CliCommandOptions} from "../../util/index.js";
+import {ICliCommandOptions} from "../../util/index.js";
 
-export type MetricsArgs = {
+export interface IMetricsArgs {
   metrics: boolean;
   "metrics.port": number;
   "metrics.address": string;
-};
+}
 
-export function parseArgs(args: MetricsArgs): IBeaconNodeOptions["metrics"] {
+export function parseArgs(args: IMetricsArgs): IBeaconNodeOptions["metrics"] {
   return {
     enabled: args["metrics"],
     port: args["metrics.port"],
@@ -15,7 +15,7 @@ export function parseArgs(args: MetricsArgs): IBeaconNodeOptions["metrics"] {
   };
 }
 
-export const options: CliCommandOptions<MetricsArgs> = {
+export const options: ICliCommandOptions<IMetricsArgs> = {
   metrics: {
     type: "boolean",
     description: "Enable the Prometheus metrics HTTP server",

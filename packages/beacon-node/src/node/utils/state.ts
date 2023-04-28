@@ -1,12 +1,14 @@
-import {ChainForkConfig} from "@lodestar/config";
+import {IChainForkConfig} from "@lodestar/config";
 import {BeaconStateAllForks} from "@lodestar/state-transition";
 import {phase0, ssz} from "@lodestar/types";
+import type {SecretKey} from "@chainsafe/bls/types";
 import {IBeaconDb} from "../../db/index.js";
-import {interopDeposits} from "./interop/deposits.js";
+import {deterministicDeposits, interopDeposits} from "./interop/deposits.js";
 import {getInteropState, InteropStateOpts} from "./interop/state.js";
+import {DepositTree} from "../../db/repositories/depositDataRoot";
 
 export function initDevState(
-  config: ChainForkConfig,
+  config: IChainForkConfig,
   validatorCount: number,
   interopStateOpts: InteropStateOpts
 ): {deposits: phase0.Deposit[]; state: BeaconStateAllForks} {
@@ -17,6 +19,18 @@ export function initDevState(
     interopStateOpts
   );
   const state = getInteropState(config, interopStateOpts, deposits);
+  return {deposits, state};
+}
+
+export function initDeterministicStateFromDepositData(
+    config: IChainForkConfig,
+    deposits: phase0.Deposit[],
+    interopStateOpts: InteropStateOpts,
+    fullDepositDataRootList: DepositTree,
+): {deposits: phase0.Deposit[]; state: BeaconStateAllForks} {
+
+  const state = getInteropState(config, interopStateOpts, deposits, fullDepositDataRootList);
+
   return {deposits, state};
 }
 

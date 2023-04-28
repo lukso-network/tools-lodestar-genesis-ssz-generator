@@ -1,20 +1,20 @@
 import path from "node:path";
-import {GlobalArgs} from "../../options/index.js";
-import {getGlobalPaths, GlobalPaths} from "../../paths/global.js";
+import {IGlobalArgs} from "../../options/index.js";
+import {getGlobalPaths, IGlobalPaths} from "../../paths/global.js";
 
-export type BeaconPathsPartial = Partial<{
+export type BeaconPaths = Partial<{
   beaconDir: string;
   peerStoreDir: string;
   dbDir: string;
   persistInvalidSszObjectsDir: string;
 }>;
 
-export type BeaconPaths = {
+export interface IBeaconPaths {
   beaconDir: string;
   peerStoreDir: string;
   dbDir: string;
   persistInvalidSszObjectsDir: string;
-};
+}
 
 /**
  * Defines the path structure of the files relevant to the beacon node
@@ -30,10 +30,10 @@ export type BeaconPaths = {
  * ```
  */
 export function getBeaconPaths(
-  // Using Pick<GlobalArgs, "dataDir"> make changes in GlobalArgs throw a type error here
-  args: BeaconPathsPartial & Pick<GlobalArgs, "dataDir">,
+  // Using Pick<IGlobalArgs, "dataDir"> make changes in IGlobalArgs throw a type error here
+  args: BeaconPaths & Pick<IGlobalArgs, "dataDir">,
   network: string
-): GlobalPaths & Required<BeaconPathsPartial> {
+): IGlobalPaths & Required<BeaconPaths> {
   // Compute global paths first
   const globalPaths = getGlobalPaths(args, network);
 

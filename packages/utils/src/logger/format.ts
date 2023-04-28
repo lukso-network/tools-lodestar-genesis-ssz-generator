@@ -1,6 +1,6 @@
 import winston from "winston";
 import {logCtxToJson, logCtxToString, LogData} from "./json.js";
-import {LoggerOptions, TimestampFormatCode} from "./interface.js";
+import {ILoggerOptions, TimestampFormatCode} from "./interface.js";
 import {formatEpochSlotTime} from "./util.js";
 
 const {format} = winston;
@@ -8,7 +8,7 @@ const {format} = winston;
 type Format = ReturnType<typeof winston.format.combine>;
 
 // TODO: Find a more typesafe way of enforce this properties
-type WinstonInfoArg = {
+interface IWinstonInfoArg {
   level: string;
   message: string;
   module?: string;
@@ -16,9 +16,9 @@ type WinstonInfoArg = {
   timestamp: string;
   context: LogData;
   error: Error;
-};
+}
 
-export function getFormat(opts: LoggerOptions): Format {
+export function getFormat(opts: ILoggerOptions): Format {
   switch (opts.format) {
     case "json":
       return jsonLogFormat(opts);
@@ -29,7 +29,7 @@ export function getFormat(opts: LoggerOptions): Format {
   }
 }
 
-function humanReadableLogFormat(opts: LoggerOptions): Format {
+function humanReadableLogFormat(opts: ILoggerOptions): Format {
   return format.combine(
     ...(opts.hideTimestamp ? [] : [formatTimestamp(opts)]),
     format.colorize(),
@@ -37,7 +37,7 @@ function humanReadableLogFormat(opts: LoggerOptions): Format {
   );
 }
 
-function formatTimestamp(opts: LoggerOptions): Format {
+function formatTimestamp(opts: ILoggerOptions): Format {
   const {timestampFormat} = opts;
 
   switch (timestampFormat?.format) {
@@ -55,13 +55,13 @@ function formatTimestamp(opts: LoggerOptions): Format {
   }
 }
 
-function jsonLogFormat(opts: LoggerOptions): Format {
+function jsonLogFormat(opts: ILoggerOptions): Format {
   return format.combine(
     ...(opts.hideTimestamp ? [] : [format.timestamp()]),
     format((_info) => {
-      const info = _info as WinstonInfoArg;
+      const info = _info as IWinstonInfoArg;
       info.context = logCtxToJson(info.context);
-      info.error = logCtxToJson(info.error) as unknown as Error;
+      info.error = (logCtxToJson(info.error) as unknown) as Error;
       return info;
     })(),
     format.json()
@@ -73,7 +73,7 @@ function jsonLogFormat(opts: LoggerOptions): Format {
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function humanReadableTemplateFn(_info: {[key: string]: any; level: string; message: string}): string {
-  const info = _info as WinstonInfoArg;
+  const info = _info as IWinstonInfoArg;
 
   const paddingBetweenInfo = 30;
 

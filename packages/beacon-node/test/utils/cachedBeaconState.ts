@@ -4,11 +4,11 @@ import {
   createCachedBeaconState,
   createEmptyEpochContextImmutableData,
 } from "@lodestar/state-transition";
-import {ChainForkConfig} from "@lodestar/config";
+import {IChainForkConfig} from "@lodestar/config";
 
 export function createCachedBeaconStateTest<T extends BeaconStateAllForks>(
   state: T,
-  chainConfig: ChainForkConfig
+  chainConfig: IChainForkConfig
 ): T & BeaconStateCache {
   return createCachedBeaconState<T>(state, createEmptyEpochContextImmutableData(chainConfig, state));
 }

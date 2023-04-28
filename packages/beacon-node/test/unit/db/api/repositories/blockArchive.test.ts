@@ -7,7 +7,6 @@ import {intToBytes} from "@lodestar/utils";
 import {LevelDbController, Bucket, encodeKey} from "@lodestar/db";
 
 import {BlockArchiveRepository} from "../../../../../src/db/repositories/index.js";
-import {testLogger} from "../../../../utils/logger.js";
 
 describe("block archive repository", function () {
   const testDir = "./.tmp";
@@ -15,7 +14,7 @@ describe("block archive repository", function () {
   let controller: LevelDbController;
 
   beforeEach(async function () {
-    controller = new LevelDbController({name: testDir}, {logger: testLogger()});
+    controller = new LevelDbController({name: testDir}, {});
     blockArchive = new BlockArchiveRepository(config, controller);
     await controller.start();
   });

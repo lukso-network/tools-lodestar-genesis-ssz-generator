@@ -5,7 +5,6 @@ import {
   CachedBeaconStateAltair,
   computeEpochAtSlot,
   computeStartSlotAtEpoch,
-  isStateValidatorsNodesPopulated,
   RootCache,
 } from "@lodestar/state-transition";
 import {routes} from "@lodestar/api";
@@ -89,12 +88,7 @@ export async function importBlock(
     this.clock.currentSlot,
     executionStatus
   );
-
-  // This adds the state necessary to process the next block
-  // Some block event handlers require state being in state cache so need to do this before emitting EventType.block
-  this.stateCache.add(postState);
-
-  this.logger.verbose("Added block to forkchoice and state cache", {slot: block.message.slot, root: blockRootHex});
+  this.logger.verbose("Added block to forkchoice", {slot: block.message.slot, root: blockRootHex});
   this.emitter.emit(routes.events.EventType.block, {
     block: toHexString(this.config.getForkTypes(block.message.slot).BeaconBlock.hashTreeRoot(block.message)),
     slot: block.message.slot,
@@ -330,9 +324,10 @@ export async function importBlock(
     }
   }
 
-  if (!isStateValidatorsNodesPopulated(postState)) {
-    this.logger.verbose("After importBlock caching postState without SSZ cache", {slot: postState.slot});
-  }
+  // 7. Add post state to stateCache
+  //
+  // This adds the state necessary to process the next block
+  this.stateCache.add(postState);
 
   if (block.message.slot % SLOTS_PER_EPOCH === 0) {
     // Cache state to preserve epoch transition work

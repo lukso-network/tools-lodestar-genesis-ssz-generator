@@ -1,4 +1,4 @@
-import {ChainForkConfig} from "@lodestar/config";
+import {IChainForkConfig} from "@lodestar/config";
 import {phase0, ssz} from "@lodestar/types";
 import {ApiClientResponse} from "../../../interfaces.js";
 import {HttpStatusCode} from "../../../utils/client/httpStatusCode.js";
@@ -49,7 +49,7 @@ export type ReqTypes = {
 };
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export function getReqSerializers(config: ChainForkConfig) {
+export function getReqSerializers(config: IChainForkConfig) {
   return {
     getGenesis: reqEmpty,
     ...block.getReqSerializers(config),

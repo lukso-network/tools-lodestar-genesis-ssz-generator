@@ -1,14 +1,14 @@
 import {computeSigningRoot} from "@lodestar/state-transition";
 import {DOMAIN_BLS_TO_EXECUTION_CHANGE, ForkName} from "@lodestar/params";
-import {createBeaconConfig} from "@lodestar/config";
+import {createIBeaconConfig} from "@lodestar/config";
 import {ssz, capella} from "@lodestar/types";
 import {ApiError, getClient} from "@lodestar/api";
 import {fromHexString} from "@chainsafe/ssz";
 import bls from "@chainsafe/bls";
 import {PointFormat} from "@chainsafe/bls/types";
 
-import {CliCommand} from "../../util/index.js";
-import {GlobalArgs} from "../../options/index.js";
+import {ICliCommand} from "../../util/index.js";
+import {IGlobalArgs} from "../../options/index.js";
 import {getBeaconConfigFromArgs} from "../../config/index.js";
 import {IValidatorCliArgs} from "./options.js";
 
@@ -20,7 +20,7 @@ type BlsToExecutionChangeArgs = {
   toExecutionAddress: string;
 };
 
-export const blsToExecutionChange: CliCommand<BlsToExecutionChangeArgs, IValidatorCliArgs & GlobalArgs> = {
+export const blsToExecutionChange: ICliCommand<BlsToExecutionChangeArgs, IValidatorCliArgs & IGlobalArgs> = {
   command: "bls-to-execution-change",
 
   describe:
@@ -62,7 +62,7 @@ like to choose for BLS To Execution Change.",
     const genesisRes = await client.beacon.getGenesis();
     ApiError.assert(genesisRes, "Can not fetch genesis data");
     const {genesisValidatorsRoot} = genesisRes.response.data;
-    const config = createBeaconConfig(chainForkConfig, genesisValidatorsRoot);
+    const config = createIBeaconConfig(chainForkConfig, genesisValidatorsRoot);
 
     const stateValidatorRes = await client.beacon.getStateValidators("head", {id: [publicKey]});
     ApiError.assert(stateValidatorRes, "Can not fetch state validators");

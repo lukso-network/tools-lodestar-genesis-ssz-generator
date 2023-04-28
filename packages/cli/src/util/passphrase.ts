@@ -1,5 +1,4 @@
 import fs from "node:fs";
-import {stripOffNewlines} from "./stripOffNewlines.js";
 
 /**
  * Utility to read file as UTF8 and strip any trailing new lines.
@@ -7,7 +6,8 @@ import {stripOffNewlines} from "./stripOffNewlines.js";
  */
 export function readPassphraseFile(passphraseFile: string): string {
   const data = fs.readFileSync(passphraseFile, "utf8");
-  const passphrase = stripOffNewlines(data);
+  // Remove trailing new lines '\n' or '\r' if any
+  const passphrase = data.replace(/[\n|\r]+$/g, "");
 
   // Validate the passphraseFile contents to prevent the user to create a wallet with a password
   // that is the contents a random unintended file

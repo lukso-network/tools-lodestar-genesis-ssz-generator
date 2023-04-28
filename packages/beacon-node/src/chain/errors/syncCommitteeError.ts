@@ -1,4 +1,4 @@
-import {ValidatorIndex, Slot} from "@lodestar/types";
+import {altair, ValidatorIndex, Slot} from "@lodestar/types";
 import {GossipActionError} from "./gossipValidation.js";
 
 export enum SyncCommitteeErrorCode {
@@ -24,5 +24,10 @@ export type SyncCommitteeErrorType =
   | {code: SyncCommitteeErrorCode.NO_PARTICIPANT}
   | {code: SyncCommitteeErrorCode.INVALID_AGGREGATOR; aggregatorIndex: ValidatorIndex}
   | {code: SyncCommitteeErrorCode.AGGREGATOR_PUBKEY_UNKNOWN; aggregatorIndex: ValidatorIndex};
+
+export interface ISyncCommitteeJob {
+  signature: altair.SyncCommitteeMessage;
+  validSignature: boolean;
+}
 
 export class SyncCommitteeError extends GossipActionError<SyncCommitteeErrorType> {}

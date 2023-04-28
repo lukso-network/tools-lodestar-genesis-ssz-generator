@@ -1,13 +1,27 @@
-import {ChainForkConfig} from "@lodestar/config";
-import {allForks} from "@lodestar/types";
+import {IChainForkConfig} from "@lodestar/config";
+import {allForks, Slot} from "@lodestar/types";
 import {bytesToInt} from "@lodestar/utils";
-import {getSlotFromSignedBeaconBlockSerialized} from "./sszBytes.js";
 
 /**
  * Slot	uint64
  */
 const SLOT_BYTE_COUNT = 8;
-
+/**
+ * 4 + 96 = 100
+ * ```
+ * class SignedBeaconBlock(Container):
+ *   message: BeaconBlock [offset - 4 bytes]
+ *   signature: BLSSignature [fixed - 96 bytes]
+ *
+ * class BeaconBlock(Container):
+ *   slot: Slot [fixed - 8 bytes]
+ *   proposer_index: ValidatorIndex
+ *   parent_root: Root
+ *   state_root: Root
+ *   body: BeaconBlockBody
+ * ```
+ */
+const SLOT_BYTES_POSITION_IN_BLOCK = 100;
 /**
  * 8 + 32 = 40
  * ```
@@ -21,19 +35,19 @@ const SLOT_BYTE_COUNT = 8;
 const SLOT_BYTES_POSITION_IN_STATE = 40;
 
 export function getSignedBlockTypeFromBytes(
-  config: ChainForkConfig,
+  config: IChainForkConfig,
   bytes: Buffer | Uint8Array
 ): allForks.AllForksSSZTypes["SignedBeaconBlock"] {
-  const slot = getSlotFromSignedBeaconBlockSerialized(bytes);
-  if (slot === null) {
-    throw Error("getSignedBlockTypeFromBytes: invalid bytes");
-  }
-
+  const slot = getSlotFromBytes(bytes);
   return config.getForkTypes(slot).SignedBeaconBlock;
 }
 
+export function getSlotFromBytes(bytes: Buffer | Uint8Array): Slot {
+  return bytesToInt(bytes.subarray(SLOT_BYTES_POSITION_IN_BLOCK, SLOT_BYTES_POSITION_IN_BLOCK + SLOT_BYTE_COUNT));
+}
+
 export function getStateTypeFromBytes(
-  config: ChainForkConfig,
+  config: IChainForkConfig,
   bytes: Buffer | Uint8Array
 ): allForks.AllForksSSZTypes["BeaconState"] {
   const slot = bytesToInt(bytes.subarray(SLOT_BYTES_POSITION_IN_STATE, SLOT_BYTES_POSITION_IN_STATE + SLOT_BYTE_COUNT));
@@ -54,7 +68,7 @@ export function getStateTypeFromBytes(
  */
 const SLOT_BYTES_POSITION_IN_LIGHTCLIENTHEADER = 0;
 export function getLightClientHeaderTypeFromBytes(
-  config: ChainForkConfig,
+  config: IChainForkConfig,
   bytes: Buffer | Uint8Array
 ): allForks.AllForksLightClientSSZTypes["LightClientHeader"] {
   const slot = bytesToInt(

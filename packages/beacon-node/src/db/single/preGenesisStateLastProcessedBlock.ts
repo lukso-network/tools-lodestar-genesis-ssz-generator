@@ -1,6 +1,6 @@
 import {UintNumberType} from "@chainsafe/ssz";
 import {ssz} from "@lodestar/types";
-import {ChainForkConfig} from "@lodestar/config";
+import {IChainForkConfig} from "@lodestar/config";
 import {Db, Bucket} from "@lodestar/db";
 
 export class PreGenesisStateLastProcessedBlock {
@@ -9,7 +9,7 @@ export class PreGenesisStateLastProcessedBlock {
   private readonly db: Db;
   private readonly key: Uint8Array;
 
-  constructor(config: ChainForkConfig, db: Db) {
+  constructor(config: IChainForkConfig, db: Db) {
     this.db = db;
     this.type = ssz.UintNum64;
     this.bucket = Bucket.phase0_preGenesisStateLastProcessedBlock;

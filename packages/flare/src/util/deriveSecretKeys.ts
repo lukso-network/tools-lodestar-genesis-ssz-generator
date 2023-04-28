@@ -4,7 +4,7 @@ import {deriveEth2ValidatorKeys, deriveKeyFromMnemonic} from "@chainsafe/bls-key
 import {interopSecretKey} from "@lodestar/state-transition";
 import {YargsError} from "./errors.js";
 import {parseRange} from "./format.js";
-import {CliCommandOptions} from "./command.js";
+import {ICliCommandOptions} from "./command.js";
 
 export type SecretKeysArgs = {
   mnemonic?: string;
@@ -12,7 +12,7 @@ export type SecretKeysArgs = {
   interopIndexes?: string;
 };
 
-export const secretKeysOptions: CliCommandOptions<SecretKeysArgs> = {
+export const secretKeysOptions: ICliCommandOptions<SecretKeysArgs> = {
   mnemonic: {
     description: "Mnemonic to derive private keys from",
     type: "string",

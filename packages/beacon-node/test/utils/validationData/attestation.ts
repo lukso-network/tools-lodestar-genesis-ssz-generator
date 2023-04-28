@@ -4,7 +4,7 @@ import {DOMAIN_BEACON_ATTESTER} from "@lodestar/params";
 import {phase0, Slot, ssz} from "@lodestar/types";
 import {BitArray, toHexString} from "@chainsafe/ssz";
 import {config} from "@lodestar/config/default";
-import {BeaconConfig} from "@lodestar/config";
+import {IBeaconConfig} from "@lodestar/config";
 import {IBeaconChain} from "../../../src/chain/index.js";
 import {IStateRegenerator} from "../../../src/chain/regen/index.js";
 import {ZERO_HASH, ZERO_HASH_HEX} from "../../../src/constants/index.js";
@@ -17,8 +17,6 @@ import {BlsSingleThreadVerifier} from "../../../src/chain/bls/index.js";
 import {signCached} from "../cache.js";
 import {ClockStatic} from "../clock.js";
 import {SeenAggregatedAttestations} from "../../../src/chain/seenCache/seenAggregateAndProof.js";
-import {SeenAttestationDatas} from "../../../src/chain/seenCache/seenAttestationData.js";
-import {defaultChainOptions} from "../../../src/chain/options.js";
 
 export type AttestationValidDataOpts = {
   currentSlot?: Slot;
@@ -33,7 +31,9 @@ export type AttestationValidDataOpts = {
 /**
  * Generate a valid gossip Attestation object. Common logic for unit and perf tests
  */
-export function getAttestationValidData(opts: AttestationValidDataOpts): {
+export function getAttestationValidData(
+  opts: AttestationValidDataOpts
+): {
   chain: IBeaconChain;
   attestation: phase0.Attestation;
   subnet: number;
@@ -69,7 +69,7 @@ export function getAttestationValidData(opts: AttestationValidDataOpts): {
 
     ...{executionPayloadBlockHash: null, executionStatus: ExecutionStatus.PreMerge},
   };
-  const forkChoice = {
+  const forkChoice = ({
     getBlock: (root) => {
       if (!ssz.Root.equals(root, beaconBlockRoot)) return null;
       return headBlock;
@@ -78,7 +78,7 @@ export function getAttestationValidData(opts: AttestationValidDataOpts): {
       if (rootHex !== toHexString(beaconBlockRoot)) return null;
       return headBlock;
     },
-  } as Partial<IForkChoice> as IForkChoice;
+  } as Partial<IForkChoice>) as IForkChoice;
 
   const committeeIndices = state.epochCtx.getBeaconCommittee(attSlot, attIndex);
   const validatorIndex = committeeIndices[bitIndex];
@@ -111,23 +111,20 @@ export function getAttestationValidData(opts: AttestationValidDataOpts): {
   const subnet = state.epochCtx.computeSubnetForSlot(attSlot, attIndex);
 
   // Add state to regen
-  const regen = {
+  const regen = ({
     getState: async () => state,
-  } as Partial<IStateRegenerator> as IStateRegenerator;
+  } as Partial<IStateRegenerator>) as IStateRegenerator;
 
-  const chain = {
+  const chain = ({
     clock,
-    config: config as BeaconConfig,
+    config: config as IBeaconConfig,
     forkChoice,
     regen,
     seenAttesters: new SeenAttesters(),
     seenAggregatedAttestations: new SeenAggregatedAttestations(null),
-    seenAttestationDatas: new SeenAttestationDatas(null, 0, 0),
     bls: new BlsSingleThreadVerifier({metrics: null}),
-    waitForBlock: () => Promise.resolve(false),
-    index2pubkey: state.epochCtx.index2pubkey,
-    opts: defaultChainOptions,
-  } as Partial<IBeaconChain> as IBeaconChain;
+    waitForBlockOfAttestation: () => Promise.resolve(false),
+  } as Partial<IBeaconChain>) as IBeaconChain;
 
   return {chain, attestation, subnet, validatorIndex};
 }

@@ -1,7 +1,7 @@
 import {allForks, Slot, ssz} from "@lodestar/types";
 import {SLOTS_PER_EPOCH} from "@lodestar/params";
 import {toHexString} from "@chainsafe/ssz";
-import {BeaconStateTransitionMetrics, onPostStateMetrics, onStateCloneMetrics} from "./metrics.js";
+import {IBeaconStateTransitionMetrics, onStateCloneMetrics} from "./metrics.js";
 import {beforeProcessEpoch, EpochProcessOpts} from "./cache/epochProcess.js";
 import {
   CachedBeaconStateAllForks,
@@ -33,7 +33,6 @@ export type StateTransitionOpts = BlockExternalData &
     verifyStateRoot?: boolean;
     verifyProposer?: boolean;
     verifySignatures?: boolean;
-    dontTransferCache?: boolean;
   };
 
 /**
@@ -47,7 +46,7 @@ export function stateTransition(
     executionPayloadStatus: ExecutionPayloadStatus.valid,
     dataAvailableStatus: DataAvailableStatus.available,
   },
-  metrics?: BeaconStateTransitionMetrics | null
+  metrics?: IBeaconStateTransitionMetrics | null
 ): CachedBeaconStateAllForks {
   const {verifyStateRoot = true, verifyProposer = true} = options;
 
@@ -55,7 +54,7 @@ export function stateTransition(
   const blockSlot = block.slot;
 
   // .clone() before mutating state in state transition
-  let postState = state.clone(options.dontTransferCache);
+  let postState = state.clone();
 
   if (metrics) {
     onStateCloneMetrics(postState, metrics, "stateTransition");
@@ -78,28 +77,19 @@ export function stateTransition(
   // Process block
   const fork = state.config.getForkSeq(block.slot);
 
-  // Note: time only on success
-  const processBlockTimer = metrics?.processBlockTime.startTimer();
-
-  processBlock(fork, postState, block, options, options);
-
-  const processBlockCommitTimer = metrics?.processBlockCommitTime.startTimer();
-  postState.commit();
-  processBlockCommitTimer?.();
-
-  // Note: time only on success. Include processBlock and commit
-  processBlockTimer?.();
-
-  if (metrics) {
-    onPostStateMetrics(postState, metrics);
+  const timer = metrics?.stfnProcessBlock.startTimer();
+  try {
+    processBlock(fork, postState, block, options, options);
+  } finally {
+    timer?.();
   }
+
+  // Apply changes to state, must do before hashing. Note: .hashTreeRoot() automatically commits() too
+  postState.commit();
 
   // Verify state root
   if (verifyStateRoot) {
-    const hashTreeRootTimer = metrics?.stateHashTreeRootTime.startTimer();
     const stateRoot = postState.hashTreeRoot();
-    hashTreeRootTimer?.();
-
     if (!ssz.Root.equals(block.stateRoot, stateRoot)) {
       throw new Error(
         `Invalid state root at slot ${block.slot}, expected=${toHexString(block.stateRoot)}, actual=${toHexString(
@@ -120,11 +110,11 @@ export function stateTransition(
 export function processSlots(
   state: CachedBeaconStateAllForks,
   slot: Slot,
-  epochProcessOpts?: EpochProcessOpts & {dontTransferCache?: boolean},
-  metrics?: BeaconStateTransitionMetrics | null
+  epochProcessOpts?: EpochProcessOpts,
+  metrics?: IBeaconStateTransitionMetrics | null
 ): CachedBeaconStateAllForks {
   // .clone() before mutating state in state transition
-  let postState = state.clone(epochProcessOpts?.dontTransferCache);
+  let postState = state.clone();
 
   if (metrics) {
     onStateCloneMetrics(postState, metrics, "processSlots");
@@ -148,7 +138,7 @@ function processSlotsWithTransientCache(
   postState: CachedBeaconStateAllForks,
   slot: Slot,
   epochProcessOpts?: EpochProcessOpts,
-  metrics?: BeaconStateTransitionMetrics | null
+  metrics?: IBeaconStateTransitionMetrics | null
 ): CachedBeaconStateAllForks {
   const {config} = postState;
   if (postState.slot > slot) {
@@ -162,25 +152,18 @@ function processSlotsWithTransientCache(
     if ((postState.slot + 1) % SLOTS_PER_EPOCH === 0) {
       // At fork boundary we don't want to process "next fork" epoch before upgrading state
       const fork = postState.config.getForkSeq(postState.slot);
+      const timer = metrics?.stfnEpochTransition.startTimer();
+      try {
+        const epochProcess = beforeProcessEpoch(postState, epochProcessOpts);
+        processEpoch(fork, postState, epochProcess);
+        const {currentEpoch, statuses, balances} = epochProcess;
+        metrics?.registerValidatorStatuses(currentEpoch, statuses, balances);
 
-      const epochTransitionTimer = metrics?.epochTransitionTime.startTimer();
-
-      const epochProcess = beforeProcessEpoch(postState, epochProcessOpts);
-      processEpoch(fork, postState, epochProcess);
-      const {currentEpoch, statuses, balances} = epochProcess;
-      metrics?.registerValidatorStatuses(currentEpoch, statuses, balances);
-
-      postState.slot++;
-      postState.epochCtx.afterProcessEpoch(postState, epochProcess);
-
-      // Running commit here is not strictly necessary. The cost of running commit twice (here + after process block)
-      // Should be negligible but gives better metrics to differentiate the cost of it for block and epoch proc.
-      const epochTransitionCommitTimer = metrics?.epochTransitionCommitTime.startTimer();
-      postState.commit();
-      epochTransitionCommitTimer?.();
-
-      // Note: time only on success. Include beforeProcessEpoch, processEpoch, afterProcessEpoch, commit
-      epochTransitionTimer?.();
+        postState.slot++;
+        postState.epochCtx.afterProcessEpoch(postState, epochProcess);
+      } finally {
+        timer?.();
+      }
 
       // Upgrade state if exactly at epoch boundary
       const stateSlot = computeEpochAtSlot(postState.slot);
@@ -193,7 +176,7 @@ function processSlotsWithTransientCache(
       if (stateSlot === config.CAPELLA_FORK_EPOCH) {
         postState = upgradeStateToCapella(postState as CachedBeaconStateBellatrix) as CachedBeaconStateAllForks;
       }
-      if (stateSlot === config.DENEB_FORK_EPOCH) {
+      if (stateSlot === config.EIP4844_FORK_EPOCH) {
         postState = upgradeStateToDeneb(postState as CachedBeaconStateCapella) as CachedBeaconStateAllForks;
       }
     } else {

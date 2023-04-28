@@ -5,7 +5,7 @@ import {
   PeerScoreThresholds,
 } from "@chainsafe/libp2p-gossipsub/score";
 import {computeCommitteeCount} from "@lodestar/state-transition";
-import {BeaconConfig} from "@lodestar/config";
+import {IBeaconConfig} from "@lodestar/config";
 import {ATTESTATION_SUBNET_COUNT, SLOTS_PER_EPOCH, TARGET_AGGREGATORS_PER_COMMITTEE} from "@lodestar/params";
 import {Eth2Context} from "../../chain/index.js";
 import {getActiveForks} from "../forks.js";
@@ -119,7 +119,7 @@ export function computeGossipPeerScoreParams({
 }
 
 function getAllTopicsScoreParams(
-  config: BeaconConfig,
+  config: IBeaconConfig,
   eth2Context: Eth2Context,
   precomputedParams: PreComputedParams
 ): Record<string, TopicScoreParams> {
@@ -244,7 +244,7 @@ function getAllTopicsScoreParams(
 }
 
 function getTopicScoreParams(
-  config: BeaconConfig,
+  config: IBeaconConfig,
   {epochDurationMs, slotDurationMs, scoreParameterDecayFn}: PreComputedParams,
   {topicWeight, expectedMessageRate, firstMessageDecayTime, meshMessageInfo}: TopicScoreInput
 ): TopicScoreParams {
@@ -300,7 +300,9 @@ function scoreParameterDecayWithBase(decayTimeMs: number, decayIntervalMs: numbe
   return Math.pow(decayToZero, 1 / ticks);
 }
 
-function expectedAggregatorCountPerSlot(activeValidatorCount: number): {
+function expectedAggregatorCountPerSlot(
+  activeValidatorCount: number
+): {
   aggregatorsPerslot: number;
   committeesPerSlot: number;
 } {

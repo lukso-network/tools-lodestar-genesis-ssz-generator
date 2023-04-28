@@ -47,7 +47,7 @@
       "collapsed": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus_local"
       },
       "gridPos": {
         "h": 1,
@@ -359,7 +359,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus_local"
       },
       "fieldConfig": {
         "defaults": {

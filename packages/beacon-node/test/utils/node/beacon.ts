@@ -3,8 +3,8 @@ import tmp from "tmp";
 import {PeerId} from "@libp2p/interface-peer-id";
 import {createSecp256k1PeerId} from "@libp2p/peer-id-factory";
 import {config as minimalConfig} from "@lodestar/config/default";
-import {createBeaconConfig, createChainForkConfig, ChainConfig} from "@lodestar/config";
-import {Logger, RecursivePartial} from "@lodestar/utils";
+import {createIBeaconConfig, createIChainForkConfig, IChainConfig} from "@lodestar/config";
+import {ILogger, RecursivePartial} from "@lodestar/utils";
 import {LevelDbController} from "@lodestar/db";
 import {phase0, ssz} from "@lodestar/types";
 import {ForkSeq, GENESIS_SLOT} from "@lodestar/params";
@@ -21,10 +21,10 @@ import {InteropStateOpts} from "../../../src/node/utils/interop/state.js";
 
 export async function getDevBeaconNode(
   opts: {
-    params: Partial<ChainConfig>;
+    params: Partial<IChainConfig>;
     options?: RecursivePartial<IBeaconNodeOptions>;
     validatorCount?: number;
-    logger?: Logger;
+    logger?: ILogger;
     peerId?: PeerId;
     peerStoreDir?: string;
     anchorState?: BeaconStateAllForks;
@@ -36,10 +36,10 @@ export async function getDevBeaconNode(
 
   if (!peerId) peerId = await createSecp256k1PeerId();
   const tmpDir = tmp.dirSync({unsafeCleanup: true});
-  const config = createChainForkConfig({...minimalConfig, ...params});
+  const config = createIChainForkConfig({...minimalConfig, ...params});
   logger = logger ?? testLogger();
 
-  const db = new BeaconDb({config, controller: new LevelDbController({name: tmpDir.name}, {logger})});
+  const db = new BeaconDb({config, controller: new LevelDbController({name: tmpDir.name}, {})});
   await db.start();
 
   options = deepmerge(
@@ -86,7 +86,7 @@ export async function getDevBeaconNode(
     }
   }
 
-  const beaconConfig = createBeaconConfig(config, anchorState.genesisValidatorsRoot);
+  const beaconConfig = createIBeaconConfig(config, anchorState.genesisValidatorsRoot);
   return BeaconNode.init({
     opts: options as IBeaconNodeOptions,
     config: beaconConfig,

@@ -5,7 +5,7 @@ import {PresetName} from "@lodestar/params";
 /**
  * Run-time chain configuration
  */
-export type ChainConfig = {
+export type IChainConfig = {
   PRESET_BASE: PresetName;
   /**
    * Free-form short name of the network that this configuration applies to - known
@@ -38,8 +38,8 @@ export type ChainConfig = {
   CAPELLA_FORK_VERSION: Uint8Array;
   CAPELLA_FORK_EPOCH: number;
   // DENEB
-  DENEB_FORK_VERSION: Uint8Array;
-  DENEB_FORK_EPOCH: number;
+  EIP4844_FORK_VERSION: Uint8Array;
+  EIP4844_FORK_EPOCH: number;
 
   // Time parameters
   SECONDS_PER_SLOT: number;
@@ -70,7 +70,7 @@ export type ChainConfig = {
   MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS: number;
 };
 
-export const chainConfigTypes: SpecTypes<ChainConfig> = {
+export const chainConfigTypes: SpecTypes<IChainConfig> = {
   PRESET_BASE: "string",
   CONFIG_NAME: "string",
 
@@ -96,8 +96,8 @@ export const chainConfigTypes: SpecTypes<ChainConfig> = {
   CAPELLA_FORK_VERSION: "bytes",
   CAPELLA_FORK_EPOCH: "number",
   // DENEB
-  DENEB_FORK_VERSION: "bytes",
-  DENEB_FORK_EPOCH: "number",
+  EIP4844_FORK_VERSION: "bytes",
+  EIP4844_FORK_EPOCH: "number",
 
   // Time parameters
   SECONDS_PER_SLOT: "number",

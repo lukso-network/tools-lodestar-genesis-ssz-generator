@@ -3,7 +3,7 @@ import {allForks, phase0, ssz, Slot, altair} from "@lodestar/types";
 import {CoordType, PublicKey, SecretKey} from "@chainsafe/bls/types";
 import bls from "@chainsafe/bls";
 import {BitArray, fromHexString} from "@chainsafe/ssz";
-import {createBeaconConfig, createChainForkConfig} from "@lodestar/config";
+import {createIBeaconConfig, createIChainForkConfig} from "@lodestar/config";
 import {
   EPOCHS_PER_ETH1_VOTING_PERIOD,
   EPOCHS_PER_HISTORICAL_VECTOR,
@@ -132,7 +132,7 @@ export function generatePerfTestCachedStatePhase0(opts?: {goBackOneSlot: boolean
     const state = phase0State.clone();
     state.slot -= 1;
     phase0CachedState23637 = createCachedBeaconState(state, {
-      config: createBeaconConfig(config, state.genesisValidatorsRoot),
+      config: createIBeaconConfig(config, state.genesisValidatorsRoot),
       pubkey2index,
       index2pubkey,
     });
@@ -222,7 +222,7 @@ export function generatePerfTestCachedStateAltair(opts?: {goBackOneSlot: boolean
   const {pubkey2index, index2pubkey} = getPubkeyCaches({pubkeys, pubkeysMod, pubkeysModObj});
 
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  const altairConfig = createChainForkConfig({ALTAIR_FORK_EPOCH: 0});
+  const altairConfig = createIChainForkConfig({ALTAIR_FORK_EPOCH: 0});
 
   const origState = generatePerformanceStateAltair(pubkeys);
 
@@ -230,7 +230,7 @@ export function generatePerfTestCachedStateAltair(opts?: {goBackOneSlot: boolean
     const state = origState.clone();
     state.slot -= 1;
     altairCachedState23637 = createCachedBeaconState(state, {
-      config: createBeaconConfig(altairConfig, state.genesisValidatorsRoot),
+      config: createIBeaconConfig(altairConfig, state.genesisValidatorsRoot),
       pubkey2index,
       index2pubkey,
     });
@@ -254,7 +254,7 @@ export function generatePerformanceStateAltair(pubkeysArg?: Uint8Array[]): Beaco
   if (!altairState) {
     const pubkeys = pubkeysArg || getPubkeys().pubkeys;
     const statePhase0 = buildPerformanceStatePhase0();
-    const state = statePhase0 as allForks.BeaconState as altair.BeaconState;
+    const state = (statePhase0 as allForks.BeaconState) as altair.BeaconState;
 
     state.previousEpochParticipation = newFilledArray(pubkeys.length, 0b111);
     state.currentEpochParticipation = state.previousEpochParticipation;
@@ -347,7 +347,7 @@ function buildPerformanceStatePhase0(pubkeysArg?: Uint8Array[]): phase0.BeaconSt
       depositRoot: Buffer.alloc(32, 1),
       blockHash: Buffer.alloc(32, 1),
     }),
-    eth1DepositIndex: pubkeys.length,
+    eth1DepositIndex: 0,
     // Registry
     validators: pubkeys.map((_, i) => ({
       pubkey: pubkeys[i],
@@ -436,7 +436,7 @@ export function generateTestCachedBeaconStateOnlyValidators({
   }
 
   return createCachedBeaconState(state, {
-    config: createBeaconConfig(config, state.genesisValidatorsRoot),
+    config: createIBeaconConfig(config, state.genesisValidatorsRoot),
     pubkey2index,
     index2pubkey,
   });

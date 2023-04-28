@@ -1,10 +1,10 @@
 import {Options} from "yargs";
-import {beaconNodeOptions, paramsOptions, BeaconNodeArgs} from "../../options/index.js";
+import {beaconNodeOptions, paramsOptions, IBeaconNodeArgs} from "../../options/index.js";
 import {logOptions} from "../../options/logOptions.js";
-import {CliCommandOptions, LogArgs} from "../../util/index.js";
-import {defaultBeaconPaths, BeaconPaths} from "./paths.js";
+import {ICliCommandOptions, ILogArgs} from "../../util/index.js";
+import {defaultBeaconPaths, IBeaconPaths} from "./paths.js";
 
-type BeaconExtraArgs = {
+interface IBeaconExtraArgs {
   forceGenesis?: boolean;
   genesisStateFile?: string;
   configFile?: string;
@@ -16,10 +16,9 @@ type BeaconExtraArgs = {
   dbDir?: string;
   persistInvalidSszObjectsDir?: string;
   peerStoreDir?: string;
-  persistNetworkIdentity?: boolean;
-};
+}
 
-export const beaconExtraOptions: CliCommandOptions<BeaconExtraArgs> = {
+export const beaconExtraOptions: ICliCommandOptions<IBeaconExtraArgs> = {
   forceGenesis: {
     description: "Force beacon to create genesis without file",
     type: "boolean",
@@ -91,23 +90,16 @@ export const beaconExtraOptions: CliCommandOptions<BeaconExtraArgs> = {
     defaultDescription: defaultBeaconPaths.peerStoreDir,
     type: "string",
   },
-
-  persistNetworkIdentity: {
-    hidden: true,
-    description: "Whether to reuse the same peer-id across restarts",
-    type: "boolean",
-  },
 };
 
-type ENRArgs = {
+interface IENRArgs {
   "enr.ip"?: string;
   "enr.tcp"?: number;
   "enr.ip6"?: string;
   "enr.udp"?: number;
   "enr.tcp6"?: number;
   "enr.udp6"?: number;
-  nat?: boolean;
-};
+}
 
 const enrOptions: Record<string, Options> = {
   "enr.ip": {
@@ -140,15 +132,10 @@ const enrOptions: Record<string, Options> = {
     type: "number",
     group: "enr",
   },
-  nat: {
-    type: "boolean",
-    description: "Allow configuration of non-local addresses",
-    group: "enr",
-  },
 };
 
 export type DebugArgs = {attachToGlobalThis: boolean};
-export const debugOptions: CliCommandOptions<DebugArgs> = {
+export const debugOptions: ICliCommandOptions<DebugArgs> = {
   attachToGlobalThis: {
     hidden: true,
     description: "Attach the beacon node to `globalThis`. Useful to inspect a running beacon node.",
@@ -156,7 +143,7 @@ export const debugOptions: CliCommandOptions<DebugArgs> = {
   },
 };
 
-export type BeaconArgs = BeaconExtraArgs & LogArgs & BeaconPaths & BeaconNodeArgs & ENRArgs & DebugArgs;
+export type IBeaconArgs = IBeaconExtraArgs & ILogArgs & IBeaconPaths & IBeaconNodeArgs & IENRArgs & DebugArgs;
 
 export const beaconOptions: {[k: string]: Options} = {
   ...beaconExtraOptions,

@@ -7,7 +7,6 @@ import {ResponseChunk, responseEncodersErrorTestCases, responseEncodersTestCases
 import {expectRejectedWithLodestarError} from "../../utils/errors.js";
 import {expectEqualByteChunks} from "../../utils/index.js";
 import {responseEncode} from "../../utils/response.js";
-import {ProtocolDefinition} from "../../../src/types.js";
 
 chai.use(chaiAsPromised);
 
@@ -15,10 +14,10 @@ describe("encoders / responseEncode", () => {
   describe("valid cases", () => {
     for (const {id, protocol, responseChunks, chunks} of responseEncodersTestCases.filter((f) => !f.skipEncoding)) {
       it(`${id}`, async () => {
-        const encodedChunks = await pipe(responseEncode(responseChunks, protocol as ProtocolDefinition<any, any>), all);
+        const encodedChunks = await pipe(responseEncode(responseChunks, protocol), all);
 
         expectEqualByteChunks(
-          encodedChunks as Uint8Array[],
+          encodedChunks,
           chunks.map((c) => c.subarray())
         );
       });
@@ -31,7 +30,7 @@ describe("encoders / responseEncode", () => {
     )) {
       it(`${id}`, async () => {
         await expectRejectedWithLodestarError(
-          pipe(responseEncode(responseChunks as ResponseChunk[], protocol as ProtocolDefinition<any, any>), all),
+          pipe(responseEncode(responseChunks as ResponseChunk[], protocol), all),
           encodeError as LodestarError<any>
         );
       });

@@ -1,7 +1,7 @@
 import {Epoch, phase0} from "@lodestar/types";
 import {byteArrayEquals} from "@chainsafe/ssz";
 import {CachedBeaconStatePhase0} from "../types.js";
-import {computeStartSlotAtEpoch, getBlockRootAtSlot, AttesterStatus} from "../util/index.js";
+import {computeStartSlotAtEpoch, getBlockRootAtSlot, IAttesterStatus} from "../util/index.js";
 
 /**
  * Mutates `statuses` from all pending attestations.
@@ -16,7 +16,7 @@ import {computeStartSlotAtEpoch, getBlockRootAtSlot, AttesterStatus} from "../ut
  */
 export function processPendingAttestations(
   state: CachedBeaconStatePhase0,
-  statuses: AttesterStatus[],
+  statuses: IAttesterStatus[],
   attestations: phase0.PendingAttestation[],
   epoch: Epoch,
   sourceFlag: number,

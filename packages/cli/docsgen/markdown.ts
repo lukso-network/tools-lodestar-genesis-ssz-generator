@@ -1,13 +1,13 @@
-export type MarkdownSection = {
+export interface IMarkdownSection {
   title: string;
   body: string | string[];
-  subsections?: MarkdownSection[];
-};
+  subsections?: IMarkdownSection[];
+}
 
 /**
- * Render MarkdownSection recursively tracking its level depth
+ * Render IMarkdownSection recursively tracking its level depth
  */
-export function renderMarkdownSections(sections: MarkdownSection[], level = 1): string {
+export function renderMarkdownSections(sections: IMarkdownSection[], level = 1): string {
   return sections
     .map((section) => {
       const parts = section.title ? [`${"\n" + "#".repeat(level)} ${section.title}`] : [""];

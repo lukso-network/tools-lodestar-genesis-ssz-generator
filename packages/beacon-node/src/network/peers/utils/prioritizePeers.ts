@@ -62,7 +62,6 @@ export enum ExcessPeerDisconnectReason {
   LOW_SCORE = "low_score",
   NO_LONG_LIVED_SUBNET = "no_long_lived_subnet",
   TOO_GROUPED_SUBNET = "too_grouped_subnet",
-  FIND_BETTER_PEERS = "find_better_peers",
 }
 
 /**
@@ -107,7 +106,7 @@ export function prioritizePeers(
     })
   );
 
-  const {attnetQueries, syncnetQueries, dutiesByPeer} = requestAttnetPeers(
+  const {attnetQueries, syncnetQueries, peerHasDuty} = requestAttnetPeers(
     connectedPeers,
     activeAttnets,
     activeSyncnets,
@@ -127,7 +126,7 @@ export function prioritizePeers(
       maxPeers - connectedPeerCount
     );
   } else if (connectedPeerCount > targetPeers) {
-    pruneExcessPeers(connectedPeers, dutiesByPeer, activeAttnets, peersToDisconnect, opts);
+    pruneExcessPeers(connectedPeers, peerHasDuty, activeAttnets, peersToDisconnect, opts);
   }
 
   return {
@@ -149,14 +148,14 @@ function requestAttnetPeers(
 ): {
   attnetQueries: SubnetDiscvQuery[];
   syncnetQueries: SubnetDiscvQuery[];
-  dutiesByPeer: Map<PeerInfo, number>;
+  peerHasDuty: Map<PeerInfo, boolean>;
 } {
   const {targetSubnetPeers = TARGET_SUBNET_PEERS} = opts;
   const attnetQueries: SubnetDiscvQuery[] = [];
   const syncnetQueries: SubnetDiscvQuery[] = [];
 
-  // To filter out peers containing enough attnets of interest from possible disconnection
-  const dutiesByPeer = new Map<PeerInfo, number>();
+  // To filter out peers that are part of 1+ attnets of interest from possible disconnection
+  const peerHasDuty = new Map<PeerInfo, boolean>();
 
   // attnets, do we need queries for more peers
   if (activeAttnets.length > 0) {
@@ -165,14 +164,16 @@ function requestAttnetPeers(
 
     for (const peer of connectedPeers) {
       const trueBitIndices = peer.attnetsTrueBitIndices;
-      let dutyCount = 0;
+      let hasDuty = false;
       for (const {subnet} of activeAttnets) {
         if (trueBitIndices.includes(subnet)) {
-          dutyCount += 1;
+          hasDuty = true;
           peersPerSubnet.set(subnet, 1 + (peersPerSubnet.get(subnet) ?? 0));
         }
       }
-      dutiesByPeer.set(peer, dutyCount);
+      if (hasDuty) {
+        peerHasDuty.set(peer, true);
+      }
     }
 
     for (const {subnet, toSlot} of activeAttnets) {
@@ -191,14 +192,16 @@ function requestAttnetPeers(
 
     for (const peer of connectedPeers) {
       const trueBitIndices = peer.syncnetsTrueBitIndices;
-      let dutyCount = dutiesByPeer.get(peer) ?? 0;
+      let hasDuty = false;
       for (const {subnet} of activeSyncnets) {
         if (trueBitIndices.includes(subnet)) {
-          dutyCount += 1;
+          hasDuty = true;
           peersPerSubnet.set(subnet, 1 + (peersPerSubnet.get(subnet) ?? 0));
         }
       }
-      dutiesByPeer.set(peer, dutyCount);
+      if (hasDuty) {
+        peerHasDuty.set(peer, true);
+      }
     }
 
     for (const {subnet, toSlot} of activeSyncnets) {
@@ -210,7 +213,7 @@ function requestAttnetPeers(
     }
   }
 
-  return {attnetQueries, syncnetQueries, dutiesByPeer};
+  return {attnetQueries, syncnetQueries, peerHasDuty};
 }
 
 /**
@@ -226,7 +229,7 @@ function requestAttnetPeers(
  */
 function pruneExcessPeers(
   connectedPeers: PeerInfo[],
-  dutiesByPeer: Map<PeerInfo, number>,
+  peerHasDuty: Map<PeerInfo, boolean>,
   activeAttnets: RequestedSubnet[],
   peersToDisconnect: MapDef<ExcessPeerDisconnectReason, PeerId[]>,
   opts: PrioritizePeersOpts
@@ -245,13 +248,12 @@ function pruneExcessPeers(
 
   let outboundPeersEligibleForPruning = 0;
 
-  const sortedPeers = sortPeersToPrune(connectedPeers, dutiesByPeer);
-
-  const peersEligibleForPruning = sortedPeers
+  // Sort by score ascending, shuffling first to break ties.
+  const peersEligibleForPruning = sortBy(shuffle(connectedPeers), (peer) => peer.score)
     // Then, iterate from highest score to lowest doing a manual filter for duties and outbound ratio
     .filter((peer) => {
       // Peers with duties are not eligible for pruning
-      if ((dutiesByPeer.get(peer) ?? 0) > 0) {
+      if (peerHasDuty.get(peer)) {
         return false;
       }
 
@@ -358,55 +360,7 @@ function pruneExcessPeers(
     }
 
     peersToDisconnect.set(ExcessPeerDisconnectReason.TOO_GROUPED_SUBNET, tooGroupedPeersToDisconnect);
-
-    // 4. Ensure to always to prune to target peers
-    // In rare case, all peers may have duties and good score but very low long lived subnet,
-    // and not too grouped to any subnets, we need to always disconnect peers until it reaches targetPeers
-    // because we want to keep improving peers (long lived subnets + score)
-    // otherwise we'll not able to accept new peer connection to consider better peers
-    // see https://github.com/ChainSafe/lodestar/issues/5198
-    const remainingPeersToDisconnect: PeerId[] = [];
-    for (const {id} of sortedPeers) {
-      if (peersToDisconnectCount >= peersToDisconnectTarget) {
-        break;
-      }
-      if (
-        noLongLivedSubnetPeersToDisconnect.includes(id) ||
-        badScorePeersToDisconnect.includes(id) ||
-        tooGroupedPeersToDisconnect.includes(id)
-      ) {
-        continue;
-      }
-      remainingPeersToDisconnect.push(id);
-      peersToDisconnectCount++;
-    }
-
-    peersToDisconnect.set(ExcessPeerDisconnectReason.FIND_BETTER_PEERS, remainingPeersToDisconnect);
   }
-}
-
-/**
- * Sort peers ascending, peer-0 has the most chance to prune, peer-n has the least.
- * Shuffling first to break ties.
- * prefer sorting by dutied subnets first then number of long lived subnets,
- * peer score is the last criteria since they are supposed to be in the same score range,
- * bad score peers are removed by peer manager anyway
- */
-export function sortPeersToPrune(connectedPeers: PeerInfo[], dutiesByPeer: Map<PeerInfo, number>): PeerInfo[] {
-  return shuffle(connectedPeers).sort((p1, p2) => {
-    const dutiedSubnet1 = dutiesByPeer.get(p1) ?? 0;
-    const dutiedSubnet2 = dutiesByPeer.get(p2) ?? 0;
-    if (dutiedSubnet1 === dutiedSubnet2) {
-      const [longLivedSubnets1, longLivedSubnets2] = [p1, p2].map(
-        (p) => p.attnetsTrueBitIndices.length + p.syncnetsTrueBitIndices.length
-      );
-      if (longLivedSubnets1 === longLivedSubnets2) {
-        return p1.score - p2.score;
-      }
-      return longLivedSubnets1 - longLivedSubnets2;
-    }
-    return dutiedSubnet1 - dutiedSubnet2;
-  });
 }
 
 /**

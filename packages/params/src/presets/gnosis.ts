@@ -1,4 +1,4 @@
-import {BeaconPreset} from "../types.js";
+import {BeaconPreset} from "../interface.js";
 import {mainnetPreset} from "./mainnet.js";
 
 /* eslint-disable @typescript-eslint/naming-convention */

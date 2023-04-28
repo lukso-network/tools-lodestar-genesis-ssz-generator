@@ -1,10 +1,10 @@
 import {defaultOptions, IBeaconNodeOptions} from "@lodestar/beacon-node";
-import {CliCommandOptions, YargsError} from "../../util/index.js";
+import {ICliCommandOptions, YargsError} from "../../util/index.js";
 
 const defaultListenAddress = "0.0.0.0";
 export const defaultP2pPort = 9000;
 
-export type NetworkArgs = {
+export interface INetworkArgs {
   discv5?: boolean;
   listenAddress?: string;
   port?: number;
@@ -23,7 +23,6 @@ export type NetworkArgs = {
   "network.gossipsubDHigh": number;
   "network.gossipsubAwaitHandler": boolean;
   "network.rateLimitMultiplier": number;
-  "network.maxGossipTopicConcurrency"?: number;
 
   /** @deprecated This option is deprecated and should be removed in next major release. */
   "network.requestCountPeerLimit": number;
@@ -33,9 +32,9 @@ export type NetworkArgs = {
   "network.blockCountPeerLimit": number;
   /** @deprecated This option is deprecated and should be removed in next major release. */
   "network.rateTrackerTimeoutMs": number;
-};
+}
 
-export function parseArgs(args: NetworkArgs): IBeaconNodeOptions["network"] {
+export function parseArgs(args: INetworkArgs): IBeaconNodeOptions["network"] {
   const listenAddress = args.listenAddress || defaultListenAddress;
   const udpPort = args.discoveryPort ?? args.port ?? defaultP2pPort;
   const tcpPort = args.port ?? defaultP2pPort;
@@ -68,11 +67,10 @@ export function parseArgs(args: NetworkArgs): IBeaconNodeOptions["network"] {
     gossipsubAwaitHandler: args["network.gossipsubAwaitHandler"],
     mdns: args["mdns"],
     rateLimitMultiplier: args["network.rateLimitMultiplier"],
-    maxGossipTopicConcurrency: args["network.maxGossipTopicConcurrency"],
   };
 }
 
-export const options: CliCommandOptions<NetworkArgs> = {
+export const options: ICliCommandOptions<INetworkArgs> = {
   discv5: {
     type: "boolean",
     // TODO: Add `network.discv5.enabled` to the `IDiscv5DiscoveryInputOptions` type
@@ -237,12 +235,6 @@ export const options: CliCommandOptions<NetworkArgs> = {
     description: "The multiplier to increase the rate limits. Set to zero to disable rate limiting.",
     hidden: true,
     defaultDescription: String(defaultOptions.network.rateLimitMultiplier),
-    group: "network",
-  },
-
-  "network.maxGossipTopicConcurrency": {
-    type: "number",
-    hidden: true,
     group: "network",
   },
 };

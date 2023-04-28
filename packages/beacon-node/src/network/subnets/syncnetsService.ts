@@ -1,22 +1,22 @@
 import {computeStartSlotAtEpoch} from "@lodestar/state-transition";
-import {BeaconConfig} from "@lodestar/config";
+import {IBeaconConfig} from "@lodestar/config";
 import {ForkName, SYNC_COMMITTEE_SUBNET_COUNT} from "@lodestar/params";
 import {Epoch, ssz} from "@lodestar/types";
-import {Logger} from "@lodestar/utils";
+import {ILogger} from "@lodestar/utils";
 import {ChainEvent, IBeaconChain} from "../../chain/index.js";
 import {getActiveForks} from "../forks.js";
 import {Eth2Gossipsub, GossipType} from "../gossip/index.js";
 import {MetadataController} from "../metadata.js";
 import {RequestedSubnet, SubnetMap} from "../peers/utils/index.js";
-import {Metrics} from "../../metrics/metrics.js";
-import {CommitteeSubscription, SubnetsService, SubnetsServiceOpts} from "./interface.js";
+import {IMetrics} from "../../metrics/metrics.js";
+import {CommitteeSubscription, ISubnetsService, SubnetsServiceOpts} from "./interface.js";
 
 const gossipType = GossipType.sync_committee;
 
 /**
  * Manage sync committee subnets. Sync committees are long (~27h) so there aren't random long-lived subscriptions
  */
-export class SyncnetsService implements SubnetsService {
+export class SyncnetsService implements ISubnetsService {
   /**
    * All currently subscribed subnets. Syncnets do not have additional long-lived
    * random subscriptions since the committees are already active for long periods of time.
@@ -28,12 +28,12 @@ export class SyncnetsService implements SubnetsService {
   private subscriptionsCommittee = new SubnetMap();
 
   constructor(
-    private readonly config: BeaconConfig,
+    private readonly config: IBeaconConfig,
     private readonly chain: IBeaconChain,
     private readonly gossip: Eth2Gossipsub,
     private readonly metadata: MetadataController,
-    private readonly logger: Logger,
-    private readonly metrics: Metrics | null,
+    private readonly logger: ILogger,
+    private readonly metrics: IMetrics | null,
     private readonly opts?: SubnetsServiceOpts
   ) {
     if (metrics) {
@@ -145,7 +145,7 @@ export class SyncnetsService implements SubnetsService {
     }
   }
 
-  private onScrapeLodestarMetrics(metrics: Metrics): void {
+  private onScrapeLodestarMetrics(metrics: IMetrics): void {
     metrics.syncnetsService.subscriptionsCommittee.set(this.subscriptionsCommittee.size);
   }
 }

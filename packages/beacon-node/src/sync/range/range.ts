@@ -2,12 +2,12 @@ import {EventEmitter} from "events";
 import StrictEventEmitter from "strict-event-emitter-types";
 import {PeerId} from "@libp2p/interface-peer-id";
 import {computeStartSlotAtEpoch} from "@lodestar/state-transition";
-import {BeaconConfig} from "@lodestar/config";
+import {IBeaconConfig} from "@lodestar/config";
 import {Epoch, phase0} from "@lodestar/types";
-import {Logger, toHex} from "@lodestar/utils";
+import {ILogger, toHex} from "@lodestar/utils";
 import {IBeaconChain} from "../../chain/index.js";
 import {INetwork} from "../../network/index.js";
-import {Metrics} from "../../metrics/index.js";
+import {IMetrics} from "../../metrics/index.js";
 import {RangeSyncType, rangeSyncTypes, getRangeSyncTarget} from "../utils/remoteSyncType.js";
 import {ImportBlockOpts, AttestationImportOpt} from "../../chain/blocks/index.js";
 import {updateChains} from "./utils/index.js";
@@ -40,9 +40,9 @@ type RangeSyncState =
 export type RangeSyncModules = {
   chain: IBeaconChain;
   network: INetwork;
-  metrics: Metrics | null;
-  config: BeaconConfig;
-  logger: Logger;
+  metrics: IMetrics | null;
+  config: IBeaconConfig;
+  logger: ILogger;
 };
 
 export type RangeSyncOpts = {
@@ -76,9 +76,9 @@ export type RangeSyncOpts = {
 export class RangeSync extends (EventEmitter as {new (): RangeSyncEmitter}) {
   private readonly chain: IBeaconChain;
   private readonly network: INetwork;
-  private readonly metrics: Metrics | null;
-  private readonly config: BeaconConfig;
-  private readonly logger: Logger;
+  private readonly metrics: IMetrics | null;
+  private readonly config: IBeaconConfig;
+  private readonly logger: ILogger;
   /** There is a single chain per type, 1 finalized sync, 1 head sync */
   private readonly chains = new Map<RangeSyncType, SyncChain>();
 
@@ -203,7 +203,7 @@ export class RangeSync extends (EventEmitter as {new (): RangeSyncEmitter}) {
 
   /** Convenience method for `SyncChain` */
   private reportPeer: SyncChainFns["reportPeer"] = (peer, action, actionName) => {
-    this.network.reportPeer(peer, action, actionName).catch((e) => this.logger.error("Error reporting peer", {}, e));
+    this.network.reportPeer(peer, action, actionName);
   };
 
   /** Convenience method for `SyncChain` */
@@ -275,9 +275,7 @@ export class RangeSync extends (EventEmitter as {new (): RangeSyncEmitter}) {
         });
 
         // Re-status peers from successful chain. Potentially trigger a Head sync
-        this.network
-          .reStatusPeers(syncChain.getPeers())
-          .catch((e) => this.logger.error("Error resyncing peers", {}, e));
+        this.network.reStatusPeers(syncChain.getPeers());
       }
     }
 
@@ -298,7 +296,7 @@ export class RangeSync extends (EventEmitter as {new (): RangeSyncEmitter}) {
     }
   }
 
-  private scrapeMetrics(metrics: Metrics): void {
+  private scrapeMetrics(metrics: IMetrics): void {
     metrics.syncRange.syncChainsPeers.reset();
     const syncChainsByType: Record<RangeSyncType, number> = {
       [RangeSyncType.Finalized]: 0,

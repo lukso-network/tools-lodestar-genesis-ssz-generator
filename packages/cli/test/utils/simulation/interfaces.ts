@@ -1,13 +1,12 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import {ChildProcess} from "node:child_process";
 import type {SecretKey} from "@chainsafe/bls/types";
 import {Api} from "@lodestar/api";
 import {Api as KeyManagerApi} from "@lodestar/api/keymanager";
-import {ChainConfig, ChainForkConfig} from "@lodestar/config";
+import {IChainConfig, IChainForkConfig} from "@lodestar/config";
 import {ForkName} from "@lodestar/params";
 import {Slot, allForks, Epoch} from "@lodestar/types";
-import {BeaconArgs} from "../../../src/cmds/beacon/options.js";
-import {GlobalArgs} from "../../../src/options/index.js";
+import {IBeaconArgs} from "../../../src/cmds/beacon/options.js";
+import {IGlobalArgs} from "../../../src/options/index.js";
 import {EpochClock} from "./EpochClock.js";
 import {Eth1ProviderWithAdmin} from "./Eth1ProviderWithAdmin.js";
 
@@ -16,7 +15,7 @@ export type NodeId = string;
 export type SimulationInitOptions = {
   id: string;
   logsDir: string;
-  chainConfig: AtLeast<ChainConfig, "ALTAIR_FORK_EPOCH" | "BELLATRIX_FORK_EPOCH" | "GENESIS_DELAY">;
+  chainConfig: AtLeast<IChainConfig, "ALTAIR_FORK_EPOCH" | "BELLATRIX_FORK_EPOCH" | "GENESIS_DELAY">;
 };
 
 export type SimulationOptions = {
@@ -29,7 +28,6 @@ export type SimulationOptions = {
 
 export enum CLClient {
   Lodestar = "lodestar",
-  Lighthouse = "lighthouse",
 }
 
 export enum ELClient {
@@ -44,8 +42,7 @@ export enum ELStartMode {
 }
 
 export type CLClientsOptions = {
-  [CLClient.Lodestar]: Partial<BeaconArgs & GlobalArgs>;
-  [CLClient.Lighthouse]: Record<string, unknown>;
+  [CLClient.Lodestar]: Partial<IBeaconArgs & IGlobalArgs>;
 };
 
 export type ELClientsOptions = {
@@ -70,14 +67,19 @@ export type CLClientKeys =
 
 export interface CLClientGeneratorOptions<C extends CLClient = CLClient> {
   id: string;
-  nodeIndex: number;
-  paths: CLPaths;
+  dataDir: string;
+  logFilePath: string;
+  genesisStateFilePath: string;
   address: string;
-  config: ChainForkConfig;
+  restPort: number;
+  port: number;
+  keyManagerPort: number;
+  config: IChainForkConfig;
   keys: CLClientKeys;
   genesisTime: number;
   engineUrls: string[];
   engineMock: boolean;
+  jwtSecretHex: string;
   clientOptions: CLClientsOptions[C];
 }
 
@@ -89,42 +91,23 @@ export interface ELGeneratorGenesisOptions<E extends ELClient = ELClient> {
 
 export interface ELGeneratorClientOptions<E extends ELClient = ELClient> extends ELGeneratorGenesisOptions {
   mode: ELStartMode;
-  nodeIndex: number;
   id: string;
+  logFilePath: string;
+  dataDir: string;
+  jwtSecretHex: string;
+  enginePort: number;
+  ethPort: number;
+  port: number;
   address: string;
   mining: boolean;
-  paths: ELPaths;
   clientOptions: ELClientsOptions[E];
 }
 
-export type LodestarAPI = Api;
-export type LighthouseAPI = Omit<Api, "lodestar"> & {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  lighthouse: {
-    getPeers(): Promise<{
-      status: number;
-      body: {
-        peer_id: string;
-        peer_info: {
-          score: {
-            Real: {
-              lighthouse_score: number;
-              gossipsub_score: number;
-              ignore_negative_gossipsub_score: boolean;
-              score: number;
-            };
-          };
-        };
-      }[];
-    }>;
-  };
-};
-
-export interface CLNode<C extends CLClient = CLClient> {
-  readonly client: C;
+export interface CLNode {
+  readonly client: CLClient;
   readonly id: string;
   readonly url: string;
-  readonly api: C extends CLClient.Lodestar ? LodestarAPI : LighthouseAPI;
+  readonly api: Api;
   readonly keyManager: KeyManagerApi;
   readonly keys: CLClientKeys;
   readonly job: Job;
@@ -147,12 +130,18 @@ export interface NodePair {
   readonly el: ELNode;
 }
 
-export type CLClientGenerator<C extends CLClient> = (opts: CLClientGeneratorOptions<C>, runner: IRunner) => CLNode;
-export type ELClientGenerator<E extends ELClient> = (opts: ELGeneratorClientOptions<E>, runner: IRunner) => ELNode;
+export type CLClientGenerator<C extends CLClient> = (
+  opts: CLClientGeneratorOptions<C>,
+  runner: Runner<RunnerType.ChildProcess> | Runner<RunnerType.Docker>
+) => CLNode;
+export type ELClientGenerator<E extends ELClient> = (
+  opts: ELGeneratorClientOptions<E>,
+  runner: Runner<RunnerType.ChildProcess> | Runner<RunnerType.Docker>
+) => ELNode;
 
 export type HealthStatus = {ok: true} | {ok: false; reason: string; checkId: string};
 
-export type JobOptions<T extends RunnerType = RunnerType.ChildProcess | RunnerType.Docker> = {
+export interface JobOptions {
   readonly id: string;
 
   readonly cli: {
@@ -165,11 +154,8 @@ export type JobOptions<T extends RunnerType = RunnerType.ChildProcess | RunnerTy
     readonly stdoutFilePath: string;
   };
 
-  // The job is meant to run with following runner
-  readonly type: T;
-
   // Nested children runs in sequence, while the array of jobs runs in parallel
-  readonly children?: JobOptions<RunnerType>[];
+  readonly children?: JobOptions[];
 
   // Will be called frequently to check the health of job startup
   // If not present then wait for the job to exit
@@ -180,13 +166,10 @@ export type JobOptions<T extends RunnerType = RunnerType.ChildProcess | RunnerTy
 
   // Called once before the `job.stop` is called
   teardown?(): Promise<void>;
-
-  // Runner specific options
-} & {
-  [T2 in T]: RunnerOptions[T2] extends never ? {readonly options?: undefined} : {readonly options: RunnerOptions[T2]};
-}[T];
+}
 
 export interface Job {
+  type: RunnerType;
   id: string;
   start(): Promise<void>;
   stop(): Promise<void>;
@@ -201,23 +184,20 @@ export type RunnerOptions = {
   [RunnerType.ChildProcess]: never;
   [RunnerType.Docker]: {
     image: string;
-    mounts?: [[string, string]];
-    exposePorts?: number[];
-    dockerNetworkIp?: string;
+    dataVolumePath: string;
+    exposePorts: number[];
+    dockerNetworkIp: string;
   };
 };
 
-export interface IRunner {
-  create: (jobOptions: JobOptions[]) => Job;
-  on(event: RunnerEvent, cb: (id: string) => void | Promise<void>): void;
-  start(): Promise<void>;
-  stop(): Promise<void>;
-  getNextIp(): string;
-}
-
-export interface RunnerEnv<T extends RunnerType> {
+export interface Runner<T extends RunnerType> {
   type: T;
-  create: (jobOption: Omit<JobOptions<T>, "children">) => Job;
+  create: (
+    id: string,
+    jobOptions: JobOptions[],
+    ...options: RunnerOptions[T] extends never ? [undefined?] : [RunnerOptions[T]]
+  ) => Job;
+  on(event: RunnerEvent, cb: () => void | Promise<void>): void;
 }
 
 export type RunnerEvent = "starting" | "started" | "stopping" | "stop";
@@ -232,7 +212,7 @@ export type SimulationCaptureInput<T, D extends Record<string, unknown> = Record
   clock: EpochClock;
   node: NodePair;
   store: Record<Slot, T>;
-  forkConfig: ChainForkConfig;
+  forkConfig: IChainForkConfig;
   dependantStores: D;
 };
 
@@ -243,14 +223,14 @@ export type SimulationAssertionInput<T, D extends Record<string, unknown> = Reco
   nodes: NodePair[];
   store: Record<NodeId, Record<Slot, T>>;
   dependantStores: D;
-  forkConfig: ChainForkConfig;
+  forkConfig: IChainForkConfig;
 };
 
 export type SimulationMatcherInput = {
   slot: Slot;
   epoch: Epoch;
   clock: EpochClock;
-  forkConfig: ChainForkConfig;
+  forkConfig: IChainForkConfig;
 };
 
 export type AssertionMatcher = (input: SimulationMatcherInput) => boolean | {match: boolean; remove: boolean};
@@ -299,7 +279,7 @@ export abstract class SimulationReporter<T extends SimulationAssertion[]> {
   constructor(
     protected options: {
       clock: EpochClock;
-      forkConfig: ChainForkConfig;
+      forkConfig: IChainForkConfig;
       stores: StoreTypes<T>;
       nodes: NodePair[];
       errors: SimulationAssertionError[];
@@ -309,28 +289,3 @@ export abstract class SimulationReporter<T extends SimulationAssertion[]> {
   abstract progress(slot: Slot): void;
   abstract summary(): void;
 }
-
-export interface CLPaths {
-  rootDir: string;
-  dataDir: string;
-  genesisFilePath: string;
-  jwtsecretFilePath: string;
-  validatorsDir: string;
-  keystoresDir: string;
-  keystoresSecretsDir: string;
-  keystoresSecretFilePath: string;
-  validatorsDefinitionFilePath: string;
-  logFilePath: string;
-}
-
-export interface ELPaths {
-  rootDir: string;
-  dataDir: string;
-  genesisFilePath: string;
-  jwtsecretFilePath: string;
-  logFilePath: string;
-}
-
-export type MountedPaths<T> = T & {
-  [P in keyof T as `${string & P}Mounted`]: T[P];
-};

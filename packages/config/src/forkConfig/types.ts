@@ -1,26 +1,26 @@
 import {ForkName, ForkSeq} from "@lodestar/params";
 import {allForks, Epoch, Slot, Version} from "@lodestar/types";
 
-export type ForkInfo = {
+export interface IForkInfo {
   name: ForkName;
   seq: ForkSeq;
   epoch: Epoch;
   version: Version;
   prevVersion: Version;
   prevForkName: ForkName;
-};
+}
 
 /**
  * Fork schedule and helper methods
  */
-export type ForkConfig = {
+export interface IForkConfig {
   /** Forks in order order of occurence, `phase0` first */
-  forks: {[K in ForkName]: ForkInfo};
-  forksAscendingEpochOrder: ForkInfo[];
-  forksDescendingEpochOrder: ForkInfo[];
+  forks: {[K in ForkName]: IForkInfo};
+  forksAscendingEpochOrder: IForkInfo[];
+  forksDescendingEpochOrder: IForkInfo[];
 
   /** Get the hard-fork info for the active fork at `slot` */
-  getForkInfo(slot: Slot): ForkInfo;
+  getForkInfo(slot: Slot): IForkInfo;
 
   /** Get the hard-fork name at a given slot */
   getForkName(slot: Slot): ForkName;
@@ -38,4 +38,4 @@ export type ForkConfig = {
   getBlindedForkTypes(slot: Slot): allForks.AllForksBlindedSSZTypes;
   /** Get blobs SSZ types by hard-fork*/
   getBlobsForkTypes(slot: Slot): allForks.AllForksBlobsSSZTypes;
-};
+}

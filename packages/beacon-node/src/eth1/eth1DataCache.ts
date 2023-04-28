@@ -1,12 +1,12 @@
-import {ChainForkConfig} from "@lodestar/config";
+import {IChainForkConfig} from "@lodestar/config";
 import {phase0} from "@lodestar/types";
 import {IBeaconDb} from "../db/index.js";
 
 export class Eth1DataCache {
   db: IBeaconDb;
-  config: ChainForkConfig;
+  config: IChainForkConfig;
 
-  constructor(config: ChainForkConfig, db: IBeaconDb) {
+  constructor(config: IChainForkConfig, db: IBeaconDb) {
     this.config = config;
     this.db = db;
   }

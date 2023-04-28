@@ -1,8 +1,9 @@
 import fs from "node:fs";
-import {rimraf} from "rimraf";
+import {promisify} from "node:util";
+import rimraf from "rimraf";
 import {toHex, fromHex} from "@lodestar/utils";
 import {nodeUtils} from "@lodestar/beacon-node";
-import {GlobalArgs} from "../../options/index.js";
+import {IGlobalArgs} from "../../options/index.js";
 import {mkdir, onGracefulShutdown} from "../../util/index.js";
 import {getBeaconConfigFromArgs} from "../../config/beaconParams.js";
 import {getBeaconPaths} from "../beacon/paths.js";
@@ -15,7 +16,7 @@ import {writeTestnetFiles} from "./files.js";
 /**
  * Run a beacon node with validator
  */
-export async function devHandler(args: IDevArgs & GlobalArgs): Promise<void> {
+export async function devHandler(args: IDevArgs & IGlobalArgs): Promise<void> {
   const {config} = getBeaconConfigFromArgs(args);
 
   if (args.dumpTestnetFiles) {
@@ -24,6 +25,7 @@ export async function devHandler(args: IDevArgs & GlobalArgs): Promise<void> {
   }
 
   // TODO: Is this necessary?
+  // ANS: This is a NO NO
   const network = "dev";
   if (args.network && args.network !== network) {
     throw Error(`Must not run dev command with network '${args.network}', only 'dev' network`);
@@ -37,8 +39,8 @@ export async function devHandler(args: IDevArgs & GlobalArgs): Promise<void> {
   // Remove slashing protection db. Otherwise the validators won't be able to propose nor attest
   // until the clock reach a higher slot than the previous run of the dev command
   if (args.genesisTime === undefined) {
-    await rimraf(beaconDbDir);
-    await rimraf(validatorsDbDir);
+    await promisify(rimraf)(beaconDbDir);
+    await promisify(rimraf)(validatorsDbDir);
   }
 
   mkdir(beaconDbDir);
@@ -46,8 +48,8 @@ export async function devHandler(args: IDevArgs & GlobalArgs): Promise<void> {
 
   if (args.reset) {
     onGracefulShutdown(async () => {
-      await rimraf(beaconDbDir);
-      await rimraf(validatorsDbDir);
+      await promisify(rimraf)(beaconDbDir);
+      await promisify(rimraf)(validatorsDbDir);
     });
   }
 
@@ -79,7 +81,6 @@ export async function devHandler(args: IDevArgs & GlobalArgs): Promise<void> {
     // Note: recycle entire validator handler:
     // - keystore handling
     // - metrics
-    // - monitoring
     // - keymanager server
     await validatorHandler(args);
   }

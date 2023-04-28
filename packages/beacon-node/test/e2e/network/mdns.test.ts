@@ -5,13 +5,13 @@ import {PeerId} from "@libp2p/interface-peer-id";
 import {multiaddr} from "@multiformats/multiaddr";
 import {createSecp256k1PeerId} from "@libp2p/peer-id-factory";
 import {SignableENR} from "@chainsafe/discv5";
-import {createBeaconConfig} from "@lodestar/config";
+import {createIBeaconConfig} from "@lodestar/config";
 import {config} from "@lodestar/config/default";
 import {ssz} from "@lodestar/types";
 
 import {computeStartSlotAtEpoch} from "@lodestar/state-transition";
 import {Network, getReqRespHandlers} from "../../../src/network/index.js";
-import {defaultNetworkOptions, NetworkOptions} from "../../../src/network/options.js";
+import {defaultNetworkOptions, INetworkOptions} from "../../../src/network/options.js";
 
 import {MockBeaconChain, zeroProtoBlock} from "../../utils/mocks/chain/chain.js";
 import {createNetworkModules, onPeerConnect} from "../../utils/network.js";
@@ -24,22 +24,23 @@ import {memoOnce} from "../../utils/cache.js";
 let port = 9000;
 const mu = "/ip4/127.0.0.1/tcp/0";
 
-// eslint-disable-next-line mocha/no-skipped-tests
-describe.skip("mdns", function () {
+describe("mdns", function () {
   this.timeout(50000);
   this.retries(2); // This test fail sometimes, with a 5% rate.
 
   const afterEachCallbacks: (() => Promise<void> | void)[] = [];
   afterEach(async () => {
-    await Promise.all(afterEachCallbacks.map((cb) => cb()));
-    afterEachCallbacks.splice(0, afterEachCallbacks.length);
+    while (afterEachCallbacks.length > 0) {
+      const callback = afterEachCallbacks.pop();
+      if (callback) await callback();
+    }
   });
 
   let controller: AbortController;
   beforeEach(() => (controller = new AbortController()));
   afterEach(() => controller.abort());
 
-  async function getOpts(peerId: PeerId): Promise<NetworkOptions> {
+  async function getOpts(peerId: PeerId): Promise<INetworkOptions> {
     const bindAddrUdp = `/ip4/0.0.0.0/udp/${port++}`;
     const enr = SignableENR.createFromPeerId(peerId);
     enr.setLocationMultiaddr(multiaddr(bindAddrUdp));
@@ -68,7 +69,7 @@ describe.skip("mdns", function () {
         root: ssz.phase0.BeaconBlock.hashTreeRoot(block.message),
       },
     });
-    const beaconConfig = createBeaconConfig(config, state.genesisValidatorsRoot);
+    const beaconConfig = createIBeaconConfig(config, state.genesisValidatorsRoot);
     return {block, state, config: beaconConfig};
   });
 

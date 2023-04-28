@@ -8,13 +8,13 @@ import {
   isForkBlobs,
 } from "@lodestar/params";
 import {Slot, allForks, Version, ssz} from "@lodestar/types";
-import {ChainConfig} from "../chainConfig/index.js";
-import {ForkConfig, ForkInfo} from "./types.js";
+import {IChainConfig} from "../chainConfig/index.js";
+import {IForkConfig, IForkInfo} from "./types.js";
 
 export * from "./types.js";
 
-export function createForkConfig(config: ChainConfig): ForkConfig {
-  const phase0: ForkInfo = {
+export function createIForkConfig(config: IChainConfig): IForkConfig {
+  const phase0: IForkInfo = {
     name: ForkName.phase0,
     seq: ForkSeq.phase0,
     epoch: GENESIS_EPOCH,
@@ -23,7 +23,7 @@ export function createForkConfig(config: ChainConfig): ForkConfig {
     prevVersion: config.GENESIS_FORK_VERSION,
     prevForkName: ForkName.phase0,
   };
-  const altair: ForkInfo = {
+  const altair: IForkInfo = {
     name: ForkName.altair,
     seq: ForkSeq.altair,
     epoch: config.ALTAIR_FORK_EPOCH,
@@ -31,7 +31,7 @@ export function createForkConfig(config: ChainConfig): ForkConfig {
     prevVersion: config.GENESIS_FORK_VERSION,
     prevForkName: ForkName.phase0,
   };
-  const bellatrix: ForkInfo = {
+  const bellatrix: IForkInfo = {
     name: ForkName.bellatrix,
     seq: ForkSeq.bellatrix,
     epoch: config.BELLATRIX_FORK_EPOCH,
@@ -39,7 +39,7 @@ export function createForkConfig(config: ChainConfig): ForkConfig {
     prevVersion: config.ALTAIR_FORK_VERSION,
     prevForkName: ForkName.altair,
   };
-  const capella: ForkInfo = {
+  const capella: IForkInfo = {
     name: ForkName.capella,
     seq: ForkSeq.capella,
     epoch: config.CAPELLA_FORK_EPOCH,
@@ -47,11 +47,11 @@ export function createForkConfig(config: ChainConfig): ForkConfig {
     prevVersion: config.BELLATRIX_FORK_VERSION,
     prevForkName: ForkName.bellatrix,
   };
-  const deneb: ForkInfo = {
+  const deneb: IForkInfo = {
     name: ForkName.deneb,
     seq: ForkSeq.deneb,
-    epoch: config.DENEB_FORK_EPOCH,
-    version: config.DENEB_FORK_VERSION,
+    epoch: config.EIP4844_FORK_EPOCH,
+    version: config.EIP4844_FORK_VERSION,
     prevVersion: config.CAPELLA_FORK_VERSION,
     prevForkName: ForkName.capella,
   };
@@ -70,7 +70,7 @@ export function createForkConfig(config: ChainConfig): ForkConfig {
     forksDescendingEpochOrder,
 
     // Fork convenience methods
-    getForkInfo(slot: Slot): ForkInfo {
+    getForkInfo(slot: Slot): IForkInfo {
       const epoch = Math.floor(Math.max(slot, 0) / SLOTS_PER_EPOCH);
       // NOTE: forks must be sorted by descending epoch, latest fork first
       for (const fork of forksDescendingEpochOrder) {

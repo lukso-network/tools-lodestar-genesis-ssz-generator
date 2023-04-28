@@ -10,15 +10,15 @@ export enum ValidatorEvent {
   chainHead = "chainHead",
 }
 
-export type ValidatorEvents = {
+export interface IValidatorEvents {
   [ValidatorEvent.chainHead]: (head: HeadEventData) => void;
-};
+}
 
 /**
  * Emit important validator events.
  */
 export class ValidatorEventEmitter extends (EventEmitter as {
-  new (): StrictEventEmitter<EventEmitter, ValidatorEvents>;
+  new (): StrictEventEmitter<EventEmitter, IValidatorEvents>;
 }) {
   /**
    * Wait for the first block to come with slot >= provided slot.

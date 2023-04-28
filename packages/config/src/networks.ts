@@ -1,4 +1,4 @@
-import {ChainConfig} from "./chainConfig/index.js";
+import {IChainConfig} from "./chainConfig/index.js";
 import {mainnetChainConfig} from "./chainConfig/networks/mainnet.js";
 import {gnosisChainConfig} from "./chainConfig/networks/gnosis.js";
 import {goerliChainConfig} from "./chainConfig/networks/goerli.js";
@@ -18,7 +18,7 @@ export {
 };
 
 export type NetworkName = "mainnet" | "gnosis" | "goerli" | "ropsten" | "sepolia" | "chiado" | "zhejiang";
-export const networksChainConfig: Record<NetworkName, ChainConfig> = {
+export const networksChainConfig: Record<NetworkName, IChainConfig> = {
   mainnet: mainnetChainConfig,
   gnosis: gnosisChainConfig,
   goerli: goerliChainConfig,

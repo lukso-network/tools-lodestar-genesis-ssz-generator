@@ -3,8 +3,8 @@ import {intDiv} from "@lodestar/utils";
 import {EPOCHS_PER_SLASHINGS_VECTOR, FAR_FUTURE_EPOCH, ForkSeq, MAX_EFFECTIVE_BALANCE} from "@lodestar/params";
 
 import {
-  AttesterStatus,
-  createAttesterStatus,
+  IAttesterStatus,
+  createIAttesterStatus,
   hasMarkers,
   FLAG_UNSLASHED,
   FLAG_ELIGIBLE_ATTESTER,
@@ -128,7 +128,7 @@ export interface EpochProcess {
    * - prev attester flag set
    * With a status flag to check this conditions at once we just have to mask with an OR of the conditions.
    */
-  statuses: AttesterStatus[];
+  statuses: IAttesterStatus[];
 
   /**
    * balances array will be populated by processRewardsAndPenalties() and consumed by processEffectiveBalanceUpdates().
@@ -187,7 +187,7 @@ export function beforeProcessEpoch(state: CachedBeaconStateAllForks, opts?: Epoc
   const nextEpochShufflingActiveValidatorIndices: ValidatorIndex[] = [];
   const isActivePrevEpoch: boolean[] = [];
   const isActiveNextEpoch: boolean[] = [];
-  const statuses: AttesterStatus[] = [];
+  const statuses: IAttesterStatus[] = [];
 
   let totalActiveStakeByIncrement = 0;
 
@@ -204,7 +204,7 @@ export function beforeProcessEpoch(state: CachedBeaconStateAllForks, opts?: Epoc
 
   for (let i = 0; i < validatorCount; i++) {
     const validator = validators[i];
-    const status = createAttesterStatus();
+    const status = createIAttesterStatus();
 
     if (validator.slashed) {
       if (slashingsEpoch === validator.withdrawableEpoch) {

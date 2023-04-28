@@ -1,3 +1,4 @@
+import {Connection} from "@libp2p/interface-connection";
 import sinon, {SinonStubbedInstance} from "sinon";
 import {PeerId} from "@libp2p/interface-peer-id";
 import {expect} from "chai";
@@ -5,21 +6,23 @@ import {multiaddr} from "@multiformats/multiaddr";
 import {createSecp256k1PeerId} from "@libp2p/peer-id-factory";
 import {createKeypairFromPeerId, SignableENR} from "@chainsafe/discv5";
 import {BitArray} from "@chainsafe/ssz";
+import {altair} from "@lodestar/types";
 import {routes} from "@lodestar/api";
 import {BeaconSync, IBeaconSync} from "../../../../../src/sync/index.js";
 import {INetwork, Network} from "../../../../../src/network/index.js";
+import {MetadataController} from "../../../../../src/network/metadata.js";
 import {defaultApiOptions} from "../../../../../src/api/options.js";
 import {getNodeApi} from "../../../../../src/api/impl/node/index.js";
-import {lodestarNodePeer} from "../../../../utils/node/p2p.js";
+import {libp2pConnection} from "../../../../utils/node/p2p.js";
 
-type PeerSummary = {
+interface IPeerSummary {
   direction: string | null;
   state: string;
   hasPeerId: boolean;
   hasP2pAddress: boolean;
-};
+}
 
-const toPeerSummary = (peer: routes.node.NodePeer): PeerSummary => {
+const toPeerSummary = (peer: routes.node.NodePeer): IPeerSummary => {
   return {
     direction: peer.direction,
     state: peer.state,
@@ -49,13 +52,15 @@ describe("node api implementation", function () {
       const enr = SignableENR.createV4(keypair);
       enr.setLocationMultiaddr(multiaddr("/ip4/127.0.0.1/tcp/36001"));
       networkStub.getEnr.returns(Promise.resolve(enr));
-      networkStub.getMetadata.returns(
-        Promise.resolve({
-          attnets: BitArray.fromBoolArray([true]),
-          syncnets: BitArray.fromBitLen(0),
-          seqNumber: BigInt(1),
-        })
-      );
+      networkStub.metadata = {
+        get json(): altair.Metadata {
+          return {
+            attnets: BitArray.fromBoolArray([true]),
+            syncnets: BitArray.fromBitLen(0),
+            seqNumber: BigInt(1),
+          };
+        },
+      } as MetadataController;
       const {data: identity} = await api.getNetworkIdentity();
       expect(identity.peerId.startsWith("16")).to.equal(true);
       expect(identity.enr.startsWith("enr:-")).to.equal(true);
@@ -83,13 +88,23 @@ describe("node api implementation", function () {
     });
 
     it("it should return peer count", async function () {
-      const peers = [
-        lodestarNodePeer(peer1, "connected", "outbound"),
-        lodestarNodePeer(peer2, "disconnecting", "inbound"),
-        lodestarNodePeer(peer3, "disconnected", "inbound"),
-      ];
+      const connectionsByPeer = new Map<string, Connection[]>([
+        [peer1.toString(), [libp2pConnection(peer1, "OPEN", "outbound")]],
+        [
+          peer2.toString(),
+          [libp2pConnection(peer2, "CLOSING", "inbound"), libp2pConnection(peer2, "CLOSING", "inbound")],
+        ],
+        [
+          peer3.toString(),
+          [
+            libp2pConnection(peer3, "CLOSED", "inbound"),
+            libp2pConnection(peer3, "CLOSED", "inbound"),
+            libp2pConnection(peer3, "CLOSED", "inbound"),
+          ],
+        ],
+      ]);
 
-      networkStub.dumpPeers.returns(Promise.resolve(peers));
+      networkStub.getConnectionsByPeer.returns(connectionsByPeer);
 
       const {data: count} = await api.getPeerCount();
       expect(count).to.be.deep.equal(
@@ -113,33 +128,60 @@ describe("node api implementation", function () {
     });
 
     it("should return connected and disconnecting peers", async function () {
-      const allPeers = [
-        lodestarNodePeer(peer1, "connected", "outbound"),
-        lodestarNodePeer(peer2, "disconnecting", "inbound"),
-      ];
-      networkStub.dumpPeers.returns(Promise.resolve(allPeers));
+      const connectionsByPeer = new Map<string, Connection[]>([
+        [peer1.toString(), [libp2pConnection(peer1, "OPEN", "outbound")]],
+        [peer2.toString(), [libp2pConnection(peer2, "CLOSING", "inbound")]],
+      ]);
+      networkStub.getConnectionsByPeer.returns(connectionsByPeer);
 
       const {data: peers} = await api.getPeers();
       expect(peers.length).to.equal(2);
       expect(peers.map(toPeerSummary)).to.be.deep.equal([
-        {direction: "outbound", state: "connected", hasP2pAddress: false, hasPeerId: true},
-        {direction: "inbound", state: "disconnecting", hasPeerId: true, hasP2pAddress: false},
+        {direction: "outbound", state: "connected", hasP2pAddress: true, hasPeerId: true},
+        {direction: "inbound", state: "disconnecting", hasPeerId: true, hasP2pAddress: true},
       ]);
     });
 
     it("should return disconnected peers", async function () {
-      const allPeers = [
-        lodestarNodePeer(peer1, "disconnected", "outbound"),
-        lodestarNodePeer(peer2, "disconnected", null),
-      ];
-      networkStub.dumpPeers.returns(Promise.resolve(allPeers));
+      const connectionsByPeer = new Map<string, Connection[]>([
+        [peer1.toString(), [libp2pConnection(peer1, "CLOSED", "outbound")]],
+        [peer2.toString(), []], // peer2 has no connections in the connection manager
+      ]);
+      networkStub.getConnectionsByPeer.returns(connectionsByPeer);
 
       const {data: peers} = await api.getPeers();
       // expect(peers[0].enr).not.empty;
       expect(peers.map(toPeerSummary)).to.be.deep.equal([
-        {direction: "outbound", state: "disconnected", hasPeerId: true, hasP2pAddress: false},
+        {direction: "outbound", state: "disconnected", hasPeerId: true, hasP2pAddress: true},
         {direction: null, state: "disconnected", hasPeerId: true, hasP2pAddress: false},
       ]);
+    });
+  });
+
+  describe("getPeer", function () {
+    it("success", async function () {
+      const peer1 = await createSecp256k1PeerId();
+      const peer2 = await createSecp256k1PeerId();
+      const connectionsByPeer = new Map<string, Connection[]>([
+        [peer1.toString(), [libp2pConnection(peer1, "OPEN", "outbound")]],
+        [peer2.toString(), [libp2pConnection(peer2, "CLOSING", "inbound")]],
+      ]);
+      networkStub.getConnectionsByPeer.returns(connectionsByPeer);
+
+      const {data: peer} = await api.getPeer(peer1.toString());
+      if (peer === undefined) throw Error("getPeer returned no peer");
+      expect(peer.peerId).to.equal(peer1.toString());
+      expect(peer.lastSeenP2pAddress).not.empty;
+      expect(peer.peerId).not.empty;
+      // expect(peers[0].enr).not.empty;
+      expect(peer.direction).to.equal("outbound");
+      expect(peer.state).to.equal("connected");
+    });
+
+    it("peer not found", async function () {
+      const connectionsByPeer = new Map<string, Connection[]>();
+      networkStub.getConnectionsByPeer.returns(connectionsByPeer);
+      await expect(api.getPeer("not existent")).to.be.rejectedWith();
     });
   });
 

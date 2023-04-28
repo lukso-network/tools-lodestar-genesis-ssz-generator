@@ -1,5 +1,5 @@
 import {BLSPubkey, Root} from "@lodestar/types";
-import {Logger} from "@lodestar/utils";
+import {ILogger} from "@lodestar/utils";
 import {Interchange, InterchangeFormatVersion} from "./interchange/types.js";
 import {SlashingProtectionBlock, SlashingProtectionAttestation} from "./types.js";
 
@@ -13,11 +13,15 @@ export interface ISlashingProtection {
    */
   checkAndInsertAttestation(pubKey: BLSPubkey, attestation: SlashingProtectionAttestation): Promise<void>;
 
-  importInterchange(interchange: Interchange, genesisValidatorsRoot: Uint8Array | Root, logger?: Logger): Promise<void>;
+  importInterchange(
+    interchange: Interchange,
+    genesisValidatorsRoot: Uint8Array | Root,
+    logger?: ILogger
+  ): Promise<void>;
   exportInterchange(
     genesisValidatorsRoot: Uint8Array | Root,
     pubkeys: BLSPubkey[],
     formatVersion: InterchangeFormatVersion,
-    logger?: Logger
+    logger?: ILogger
   ): Promise<Interchange>;
 }

@@ -8,7 +8,7 @@ import "source-map-support/register.js";
 
 const lodestar = getLodestarCli();
 
-void lodestar
+lodestar
   .fail((msg, err) => {
     if (msg) {
       // Show command help message when no command is provided

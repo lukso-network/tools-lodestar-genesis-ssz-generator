@@ -1,4 +1,4 @@
-import {BeaconPreset} from "../types.js";
+import {BeaconPreset} from "../interface.js";
 
 /* eslint-disable @typescript-eslint/naming-convention */
 export const mainnetPreset: BeaconPreset = {
@@ -18,6 +18,11 @@ export const mainnetPreset: BeaconPreset = {
   HYSTERESIS_DOWNWARD_MULTIPLIER: 1,
   // 5 (plus 1.25)
   HYSTERESIS_UPWARD_MULTIPLIER: 5,
+
+  // Fork Choice
+  // ---------------------------------------------------------------
+  // 2**3 (= 8)
+  SAFE_SLOTS_TO_UPDATE_JUSTIFIED: 8,
 
   // Gwei values
   // ---------------------------------------------------------------

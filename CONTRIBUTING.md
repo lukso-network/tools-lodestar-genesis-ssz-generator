@@ -58,10 +58,8 @@ docker-compose -f docker-compose.yml -f docker-compose.validator.yml up -d
 
 ###### Dockerized metrics + local beacon node:
 
-Run a local beacon with `--metrics` enabled. Then start Prometheus + Grafana with all dashboards in `./dashboards` automatically loaded running:
-
 ```
-./docker/docker-compose.local_dev.sh
+docker-compose -f docker/docker-compose.local.yml up -d
 ```
 
 ## First Time Contributor?
@@ -96,16 +94,13 @@ If you are contributing from this repo prefix the branch name with your Github u
 
 Pull request titles must be:
 
-- Adhering to the [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/#summary) spec
 - Short and descriptive summary
-- Written in imperative present tense
+- Should be capitalized and written in imperative present tense
 - Not end with a period
 
 For example:
 
-- feat: add lodestar prover for execution api
-- fix: ignore known block in publish blinded block flow
-- refactor(reqresp)!: support byte based handlers
+> Add Edit on Github button to all the pages
 
 **Pull Request Etiquette**
 
@@ -145,25 +140,13 @@ We're currently experimenting with hosting the majority of lodestar packages and
   - Use `/** **/` commenting format for documenting a function/variable.
 - Code whitespace can be helpful for reading complex code, please add some.
 - For unit tests, we forbid import stubbing when other approaches are feasible.
-
-## Logging policy
-
-### Logging Levels
-
-Contributors must choose the log level carefully to ensure a consistent experience for every type of user:
-
-- `error`: Critical issues that prevent the application from functioning correctly or cause significant disruption to users. Examples include failed network connections, crashes, or data corruption.
-- `warn`: Situations that may lead to critical issues if not addressed but do not prevent the application from functioning. Examples include configuration issues, deprecated features, or temporary network disruptions.
-- `info`: General sporadic informational about the node's state. Examples include initialization messages, infrequent periodic status updates, or high-level progress reports.
-- `debug`: Detailed diagnostic information that can help developers or users troubleshoot specific issues. Examples include individual request logs for every REST API, networking interactions, or internal components status changes. Alias to `verbose`.
-
-### Logging guidelines
-
-- Avoid excessive logging. Log messages should be clear and concise, providing enough information to understand the context and severity of the issue.
-- Do not log sensitive data, such as private keys, user credentials, or personal information.
-- Do not log arbitrary data from the network as ASCII or UTF8 at levels higher or equal to `info`.
-- Use clear and concise language. Prefer to log variables in JSON format `log.debug("Action", {slot})` instead of formatting the text yourself `log.debug('slot=${slot}')`.
-- Include only relevant context in log messages, sufficient to debug the issue or action it refers to.
+- Logging framework: When determining which log level to use for providing information to users, consider the level of importance and whether the alert is actionable (Warning, Error, Fatal).
+  - Trace: Describes events showing step by step execution which can be ignored during standard operation.
+  - Debug: Useful information for debugging purposes.
+  - Info: Purely informative logs which can be ignored during normal operation.
+  - Warning: Unexpected behaviour, but the application continues to function and key operations are unaffected.
+  - Error: One or more main functionalities are not working, preventing some functions from working properly.
+  - Fatal: One or more main functionalities are not working and preventing the application from fulfilling its duties.
 
 ## Contributing to Grafana dashboards
 

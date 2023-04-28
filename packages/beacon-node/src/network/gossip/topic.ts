@@ -1,5 +1,5 @@
-import {phase0, ssz} from "@lodestar/types";
-import {ForkDigestContext} from "@lodestar/config";
+import {ssz} from "@lodestar/types";
+import {IForkDigestContext} from "@lodestar/config";
 import {
   ATTESTATION_SUBNET_COUNT,
   ForkName,
@@ -8,8 +8,7 @@ import {
   isForkLightClient,
 } from "@lodestar/params";
 
-import {GossipAction, GossipActionError, GossipErrorCode} from "../../chain/errors/gossipValidation.js";
-import {GossipEncoding, GossipTopic, GossipType, GossipTopicTypeMap, SSZTypeOfGossipTopic} from "./interface.js";
+import {GossipEncoding, GossipTopic, GossipType, GossipTopicTypeMap} from "./interface.js";
 import {DEFAULT_ENCODING} from "./constants.js";
 
 export interface IGossipTopicCache {
@@ -19,7 +18,7 @@ export interface IGossipTopicCache {
 export class GossipTopicCache implements IGossipTopicCache {
   private topicsByTopicStr = new Map<string, Required<GossipTopic>>();
 
-  constructor(private readonly forkDigestContext: ForkDigestContext) {}
+  constructor(private readonly forkDigestContext: IForkDigestContext) {}
 
   /** Returns cached GossipTopic, otherwise attempts to parse it from the str */
   getTopic(topicStr: string): GossipTopic {
@@ -47,7 +46,7 @@ export class GossipTopicCache implements IGossipTopicCache {
 /**
  * Stringify a GossipTopic into a spec-ed formated topic string
  */
-export function stringifyGossipTopic(forkDigestContext: ForkDigestContext, topic: GossipTopic): string {
+export function stringifyGossipTopic(forkDigestContext: IForkDigestContext, topic: GossipTopic): string {
   const forkDigestHexNoPrefix = forkDigestContext.forkName2ForkDigestHex(topic.fork);
   const topicType = stringifyGossipTopicType(topic);
   const encoding = topic.encoding ?? DEFAULT_ENCODING;
@@ -111,29 +110,6 @@ export function getGossipSSZType(topic: GossipTopic) {
   }
 }
 
-/**
- * Deserialize a gossip serialized data into an ssz object.
- */
-export function sszDeserialize<T extends GossipTopic>(topic: T, serializedData: Uint8Array): SSZTypeOfGossipTopic<T> {
-  const sszType = getGossipSSZType(topic);
-  try {
-    return sszType.deserialize(serializedData) as SSZTypeOfGossipTopic<T>;
-  } catch (e) {
-    throw new GossipActionError(GossipAction.REJECT, {code: GossipErrorCode.INVALID_SERIALIZED_BYTES_ERROR_CODE});
-  }
-}
-
-/**
- * Deserialize a gossip serialized data into an Attestation object.
- */
-export function sszDeserializeAttestation(serializedData: Uint8Array): phase0.Attestation {
-  try {
-    return ssz.phase0.Attestation.deserialize(serializedData);
-  } catch (e) {
-    throw new GossipActionError(GossipAction.REJECT, {code: GossipErrorCode.INVALID_SERIALIZED_BYTES_ERROR_CODE});
-  }
-}
-
 // Parsing
 
 const gossipTopicRegex = new RegExp("^/eth2/(\\w+)/(\\w+)/(\\w+)");
@@ -145,7 +121,7 @@ const gossipTopicRegex = new RegExp("^/eth2/(\\w+)/(\\w+)/(\\w+)");
  * /eth2/$FORK_DIGEST/$GOSSIP_TYPE/$ENCODING
  * ```
  */
-export function parseGossipTopic(forkDigestContext: ForkDigestContext, topicStr: string): Required<GossipTopic> {
+export function parseGossipTopic(forkDigestContext: IForkDigestContext, topicStr: string): Required<GossipTopic> {
   try {
     const matches = topicStr.match(gossipTopicRegex);
     if (matches === null) {

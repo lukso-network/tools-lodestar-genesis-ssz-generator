@@ -57,7 +57,7 @@ describe("sync / UnknownBlockSync", () => {
             .filter(notNullish)
             .map((block) => getBlockInput.preDeneb(config, block)),
 
-        reportPeer: async (peerId, action, actionName) => reportPeerResolveFn([peerId, action, actionName]),
+        reportPeer: (peerId, action, actionName) => reportPeerResolveFn([peerId, action, actionName]),
       };
 
       const forkChoiceKnownRoots = new Set([blockRootHex0]);

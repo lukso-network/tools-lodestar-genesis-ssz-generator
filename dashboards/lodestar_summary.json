@@ -7,29 +7,15 @@
       "type": "datasource",
       "pluginId": "prometheus",
       "pluginName": "Prometheus"
-    },
-    {
-      "name": "VAR_BEACON_JOB",
-      "type": "constant",
-      "label": "Beacon node job name",
-      "value": "beacon",
-      "description": ""
-    },
-    {
-      "name": "VAR_VALIDATOR_JOB",
-      "type": "constant",
-      "label": "Validator client job name",
-      "value": "validator",
-      "description": ""
     }
   ],
-  "__elements": {},
+  "__elements": [],
   "__requires": [
     {
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "8.5.16"
+      "version": "8.4.2"
     },
     {
       "type": "panel",
@@ -66,10 +52,7 @@
     "list": [
       {
         "builtIn": 1,
-        "datasource": {
-          "type": "datasource",
-          "uid": "grafana"
-        },
+        "datasource": "-- Grafana --",
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -88,6 +71,7 @@
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
   "id": null,
+  "iteration": 1662553761426,
   "links": [
     {
       "asDropdown": true,
@@ -108,10 +92,6 @@
   "panels": [
     {
       "collapsed": false,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -120,31 +100,16 @@
       },
       "id": 10,
       "panels": [],
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "A"
-        }
-      ],
       "title": "Node summary",
       "type": "row"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -322,8 +287,7 @@
         "legend": {
           "calcs": [],
           "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+          "placement": "bottom"
         },
         "tooltip": {
           "mode": "multi",
@@ -373,10 +337,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
       "fieldConfig": {
         "defaults": {
           "mappings": [],
@@ -414,13 +374,9 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "8.5.16",
+      "pluginVersion": "8.4.2",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
           "expr": "sum(lodestar_peers_by_direction_count)",
           "interval": "",
           "legendFormat": "",
@@ -432,10 +388,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
       "fieldConfig": {
         "defaults": {
           "mappings": [],
@@ -473,13 +425,9 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "8.5.16",
+      "pluginVersion": "8.4.2",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
           "expr": "beacon_head_slot",
           "interval": "",
           "legendFormat": "",
@@ -490,10 +438,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
       "fieldConfig": {
         "defaults": {
           "mappings": [],
@@ -531,13 +475,9 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "8.5.16",
+      "pluginVersion": "8.4.2",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
           "expr": "beacon_finalized_epoch",
           "interval": "",
           "legendFormat": "",
@@ -548,10 +488,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
       "fieldConfig": {
         "defaults": {
           "mappings": [],
@@ -589,13 +525,9 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "8.5.16",
+      "pluginVersion": "8.4.2",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
           "exemplar": false,
           "expr": "validator_monitor_validators",
           "interval": "",
@@ -607,10 +539,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
       "fieldConfig": {
         "defaults": {
           "mappings": [],
@@ -651,7 +579,7 @@
         "text": {},
         "textMode": "value"
       },
-      "pluginVersion": "8.5.16",
+      "pluginVersion": "8.4.2",
       "targets": [
         {
           "datasource": {
@@ -659,7 +587,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": false,
-          "expr": "rate(process_cpu_user_seconds_total{job=~\"$beacon_job|beacon\"} [1m])",
+          "expr": "rate(process_cpu_user_seconds_total{job=\"beacon\"} [1m])",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -669,10 +597,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
       "fieldConfig": {
         "defaults": {
           "mappings": [],
@@ -711,7 +635,7 @@
         "text": {},
         "textMode": "value"
       },
-      "pluginVersion": "8.5.16",
+      "pluginVersion": "8.4.2",
       "targets": [
         {
           "datasource": {
@@ -719,7 +643,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": false,
-          "expr": "process_heap_bytes{job=~\"$beacon_job|beacon\"}",
+          "expr": "process_heap_bytes{job=\"beacon\"}",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -729,10 +653,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
       "fieldConfig": {
         "defaults": {
           "mappings": [],
@@ -775,7 +695,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "8.5.16",
+      "pluginVersion": "8.4.2",
       "targets": [
         {
           "datasource": {
@@ -783,7 +703,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": false,
-          "expr": "process_start_time_seconds{job=~\"$beacon_job|beacon\"}*1000",
+          "expr": "process_start_time_seconds{job=\"beacon\"}*1000",
           "instant": false,
           "interval": "",
           "legendFormat": "",
@@ -794,10 +714,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
       "fieldConfig": {
         "defaults": {
           "mappings": [
@@ -854,13 +770,9 @@
         "text": {},
         "textMode": "value"
       },
-      "pluginVersion": "8.5.16",
+      "pluginVersion": "8.4.2",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
           "expr": "lodestar_sync_status",
           "interval": "",
           "legendFormat": "",
@@ -871,10 +783,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -919,7 +827,7 @@
         "text": {},
         "textMode": "name"
       },
-      "pluginVersion": "8.5.16",
+      "pluginVersion": "8.4.2",
       "targets": [
         {
           "datasource": {
@@ -927,7 +835,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": false,
-          "expr": "lodestar_version{job=~\"$beacon_job|beacon\"}",
+          "expr": "lodestar_version{job=\"beacon\"}",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -939,10 +847,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -979,7 +883,7 @@
         "text": {},
         "textMode": "name"
       },
-      "pluginVersion": "8.5.16",
+      "pluginVersion": "8.4.2",
       "targets": [
         {
           "datasource": {
@@ -987,7 +891,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": false,
-          "expr": "lodestar_version{job=~\"$beacon_job|beacon\"}",
+          "expr": "lodestar_version{job=\"beacon\"}",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -1000,10 +904,6 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1048,7 +948,7 @@
         "text": {},
         "textMode": "name"
       },
-      "pluginVersion": "8.5.16",
+      "pluginVersion": "8.4.2",
       "targets": [
         {
           "datasource": {
@@ -1056,7 +956,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": false,
-          "expr": "nodejs_version_info{job=~\"$beacon_job|beacon\"}",
+          "expr": "nodejs_version_info{job=\"beacon\"}",
           "instant": true,
           "interval": "",
           "legendFormat": "{{version}}",
@@ -1067,18 +967,12 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -1135,8 +1029,7 @@
         "legend": {
           "calcs": [],
           "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+          "placement": "bottom"
         },
         "tooltip": {
           "mode": "multi",
@@ -1173,18 +1066,12 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -1244,8 +1131,7 @@
         "legend": {
           "calcs": [],
           "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+          "placement": "bottom"
         },
         "tooltip": {
           "mode": "single",
@@ -1306,18 +1192,12 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -1374,8 +1254,7 @@
         "legend": {
           "calcs": [],
           "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+          "placement": "bottom"
         },
         "tooltip": {
           "mode": "multi",
@@ -1413,18 +1292,12 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
             "axisLabel": "GWei",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -1480,9 +1353,8 @@
       "options": {
         "legend": {
           "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": false
+          "displayMode": "hidden",
+          "placement": "bottom"
         },
         "tooltip": {
           "mode": "multi",
@@ -1520,10 +1392,6 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1568,7 +1436,7 @@
         },
         "textMode": "value_and_name"
       },
-      "pluginVersion": "8.5.16",
+      "pluginVersion": "8.4.2",
       "targets": [
         {
           "datasource": {
@@ -1587,18 +1455,12 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -1656,8 +1518,7 @@
         "legend": {
           "calcs": [],
           "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+          "placement": "bottom"
         },
         "tooltip": {
           "mode": "multi",
@@ -1718,7 +1579,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": false,
-          "expr": "sum(rate(nodejs_gc_duration_seconds_sum{job=~\"$beacon_job|beacon\"} [$rate_interval])) by (instance)",
+          "expr": "sum(rate(nodejs_gc_duration_seconds_sum{job=\"beacon\"} [$rate_interval])) by (instance)",
           "hide": false,
           "interval": "",
           "legendFormat": "gc_duration_sum",
@@ -1730,7 +1591,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": false,
-          "expr": "sum(rate(nodejs_gc_pause_seconds_total{job=~\"$beacon_job|beacon\"} [$rate_interval])) by (instance)",
+          "expr": "sum(rate(nodejs_gc_pause_seconds_total{job=\"beacon\"} [$rate_interval])) by (instance)",
           "hide": false,
           "interval": "",
           "legendFormat": "gc_pause_sum",
@@ -1753,18 +1614,12 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -1821,8 +1676,7 @@
         "legend": {
           "calcs": [],
           "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+          "placement": "bottom"
         },
         "tooltip": {
           "mode": "multi",
@@ -1859,7 +1713,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": false,
-          "expr": "avg_over_time( scrape_duration_seconds{job=~\"$beacon_job|beacon\"} [$rate_interval])",
+          "expr": "avg_over_time( scrape_duration_seconds{job=\"beacon\"} [$rate_interval])",
           "hide": false,
           "interval": "",
           "legendFormat": "prometheus_beacon_scrape_roundtrip",
@@ -1871,7 +1725,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": false,
-          "expr": "avg_over_time( scrape_duration_seconds{job=~\"$validator_job|validator\"} [$rate_interval])",
+          "expr": "avg_over_time( scrape_duration_seconds{job=\"validator\"} [$rate_interval])",
           "hide": false,
           "interval": "",
           "legendFormat": "prometheus_validator_scrape_roundtrip",
@@ -1890,15 +1744,11 @@
           "refId": "D"
         }
       ],
-      "title": "Roundtrip request times - I/O lag",
+      "title": "Roundtrip reqest times - I/O lag",
       "type": "timeseries"
     },
     {
       "collapsed": true,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -1908,10 +1758,6 @@
       "id": 487,
       "panels": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -1972,10 +1818,6 @@
           "type": "stat"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -2036,10 +1878,6 @@
           "type": "stat"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -2100,10 +1938,6 @@
           "type": "stat"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -2164,10 +1998,6 @@
           "type": "stat"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -2241,10 +2071,6 @@
           "type": "stat"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -2305,10 +2131,6 @@
           "type": "stat"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -2369,8 +2191,7 @@
             "legend": {
               "calcs": [],
               "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
+              "placement": "bottom"
             },
             "tooltip": {
               "mode": "single",
@@ -2403,10 +2224,6 @@
             "mode": "spectrum"
           },
           "dataFormat": "tsbuckets",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
           "gridPos": {
             "h": 8,
             "w": 12,
@@ -2462,10 +2279,6 @@
             "mode": "spectrum"
           },
           "dataFormat": "tsbuckets",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
           "gridPos": {
             "h": 8,
             "w": 12,
@@ -2572,8 +2385,7 @@
             "legend": {
               "calcs": [],
               "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
+              "placement": "bottom"
             },
             "tooltip": {
               "mode": "single",
@@ -2584,24 +2396,11 @@
           "type": "timeseries"
         }
       ],
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "A"
-        }
-      ],
       "title": "Network status",
       "type": "row"
     },
     {
       "collapsed": true,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -2611,10 +2410,6 @@
       "id": 104,
       "panels": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -2677,9 +2472,8 @@
             "graph": {},
             "legend": {
               "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": false
+              "displayMode": "hidden",
+              "placement": "bottom"
             },
             "tooltip": {
               "mode": "multi",
@@ -2689,10 +2483,6 @@
           "pluginVersion": "7.4.5",
           "targets": [
             {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              },
               "expr": "(time() - lodestar_genesis_time) / 12 - lodestar_clock_slot",
               "hide": false,
               "interval": "",
@@ -2704,10 +2494,6 @@
           "type": "timeseries"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -2796,9 +2582,8 @@
             "graph": {},
             "legend": {
               "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": false
+              "displayMode": "hidden",
+              "placement": "bottom"
             },
             "tooltip": {
               "mode": "multi",
@@ -2808,10 +2593,6 @@
           "pluginVersion": "7.4.5",
           "targets": [
             {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              },
               "exemplar": false,
               "expr": "lodestar_sync_status",
               "format": "time_series",
@@ -2825,10 +2606,6 @@
           "type": "timeseries"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -2891,9 +2668,8 @@
             "graph": {},
             "legend": {
               "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": false
+              "displayMode": "hidden",
+              "placement": "bottom"
             },
             "tooltip": {
               "mode": "multi",
@@ -2903,10 +2679,6 @@
           "pluginVersion": "7.4.5",
           "targets": [
             {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              },
               "exemplar": false,
               "expr": "lodestar_clock_slot - beacon_head_slot",
               "hide": false,
@@ -2919,10 +2691,6 @@
           "type": "timeseries"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
           "gridPos": {
             "h": 6,
             "w": 12,
@@ -2937,10 +2705,6 @@
           "pluginVersion": "8.4.2",
           "targets": [
             {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              },
               "exemplar": false,
               "expr": "lodestar_sync_status",
               "format": "time_series",
@@ -2954,22 +2718,12 @@
           "type": "text"
         }
       ],
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "A"
-        }
-      ],
       "title": "Node status",
       "type": "row"
     }
   ],
   "refresh": "10s",
-  "revision": 1,
-  "schemaVersion": 38,
+  "schemaVersion": 35,
   "style": "dark",
   "tags": [
     "lodestar"
@@ -3087,48 +2841,6 @@
         "name": "Filters",
         "skipUrlSync": false,
         "type": "adhoc"
-      },
-      {
-        "description": "Job name used in Prometheus config to scrape Beacon node",
-        "hide": 2,
-        "label": "Beacon node job name",
-        "name": "beacon_job",
-        "query": "${VAR_BEACON_JOB}",
-        "skipUrlSync": false,
-        "type": "constant",
-        "current": {
-          "value": "${VAR_BEACON_JOB}",
-          "text": "${VAR_BEACON_JOB}",
-          "selected": false
-        },
-        "options": [
-          {
-            "value": "${VAR_BEACON_JOB}",
-            "text": "${VAR_BEACON_JOB}",
-            "selected": false
-          }
-        ]
-      },
-      {
-        "description": "Job name used in Prometheus config to scrape Validator client",
-        "hide": 2,
-        "label": "Validator client job name",
-        "name": "validator_job",
-        "query": "${VAR_VALIDATOR_JOB}",
-        "skipUrlSync": false,
-        "type": "constant",
-        "current": {
-          "value": "${VAR_VALIDATOR_JOB}",
-          "text": "${VAR_VALIDATOR_JOB}",
-          "selected": false
-        },
-        "options": [
-          {
-            "value": "${VAR_VALIDATOR_JOB}",
-            "text": "${VAR_VALIDATOR_JOB}",
-            "selected": false
-          }
-        ]
       }
     ]
   },
@@ -3153,6 +2865,6 @@
   "timezone": "utc",
   "title": "Lodestar",
   "uid": "lodestar",
-  "version": 8,
+  "version": 7,
   "weekStart": "monday"
 }

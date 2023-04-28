@@ -1,6 +1,6 @@
 import {RegistryMetricCreator} from "../utils/registryMetricCreator.js";
 
-export type BeaconMetrics = ReturnType<typeof createBeaconMetrics>;
+export type IBeaconMetrics = ReturnType<typeof createBeaconMetrics>;
 
 /**
  * Metrics from:
@@ -103,27 +103,23 @@ export function createBeaconMetrics(register: RegistryMetricCreator) {
       }),
     },
 
-    blockProductionTime: register.histogram<"source">({
+    blockProductionTime: register.histogram({
       name: "beacon_block_production_seconds",
       help: "Full runtime of block production",
-      buckets: [0.1, 1, 2, 4, 10],
-      labelNames: ["source"],
+      buckets: [0.1, 1, 10],
     }),
-    blockProductionRequests: register.gauge<"source">({
+    blockProductionRequests: register.gauge({
       name: "beacon_block_production_requests_total",
       help: "Count of all block production requests",
-      labelNames: ["source"],
     }),
-    blockProductionSuccess: register.gauge<"source">({
+    blockProductionSuccess: register.gauge({
       name: "beacon_block_production_successes_total",
       help: "Count of blocks successfully produced",
-      labelNames: ["source"],
     }),
-    blockProductionNumAggregated: register.histogram<"source">({
+    blockProductionNumAggregated: register.histogram({
       name: "beacon_block_production_num_aggregated_total",
       help: "Count of all aggregated attestations in our produced block",
       buckets: [32, 64, 96, 128],
-      labelNames: ["source"],
     }),
 
     blockPayload: {

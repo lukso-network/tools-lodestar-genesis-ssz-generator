@@ -1,12 +1,12 @@
 import {logOptions} from "../../options/logOptions.js";
-import {CliCommandOptions, LogArgs} from "../../util/index.js";
+import {ICliCommandOptions, ILogArgs} from "../../util/index.js";
 
-export type ILightClientArgs = LogArgs & {
+export type ILightClientArgs = ILogArgs & {
   beaconApiUrl: string;
   checkpointRoot: string;
 };
 
-export const lightclientOptions: CliCommandOptions<ILightClientArgs> = {
+export const lightclientOptions: ICliCommandOptions<ILightClientArgs> = {
   ...logOptions,
   beaconApiUrl: {
     description: "Url to a beacon node that support lightclient API",

@@ -17,14 +17,14 @@ export const FLAG_PREV_HEAD_ATTESTER_UNSLASHED = FLAG_PREV_HEAD_ATTESTER | FLAG_
  * time. Attestations are a big part of this, and each validator has a "status" to represent its
  * precomputed participation.
  */
-export type AttesterStatus = {
+export interface IAttesterStatus {
   flags: number;
   proposerIndex: number; // -1 when not included by any proposer
   inclusionDelay: number;
   active: boolean;
-};
+}
 
-export function createAttesterStatus(): AttesterStatus {
+export function createIAttesterStatus(): IAttesterStatus {
   return {
     flags: 0,
     proposerIndex: -1,

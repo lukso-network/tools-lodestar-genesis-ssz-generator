@@ -1,4 +1,4 @@
-import {createBeaconConfig} from "@lodestar/config";
+import {createIBeaconConfig} from "@lodestar/config";
 import {config} from "@lodestar/config/default";
 import {ssz} from "@lodestar/types";
 import {createCachedBeaconState, PubkeyIndexMap} from "../../../src/index.js";
@@ -8,7 +8,7 @@ describe("CachedBeaconState", () => {
     const emptyState = ssz.phase0.BeaconState.defaultViewDU();
 
     createCachedBeaconState(emptyState, {
-      config: createBeaconConfig(config, emptyState.genesisValidatorsRoot),
+      config: createIBeaconConfig(config, emptyState.genesisValidatorsRoot),
       pubkey2index: new PubkeyIndexMap(),
       index2pubkey: [],
     });

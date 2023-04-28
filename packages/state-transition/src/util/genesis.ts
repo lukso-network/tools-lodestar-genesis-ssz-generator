@@ -1,4 +1,4 @@
-import {ChainForkConfig} from "@lodestar/config";
+import {IChainForkConfig} from "@lodestar/config";
 import {
   EFFECTIVE_BALANCE_INCREMENT,
   EPOCHS_PER_HISTORICAL_VECTOR,
@@ -9,7 +9,7 @@ import {
 } from "@lodestar/params";
 import {Bytes32, phase0, Root, ssz, TimeSeconds} from "@lodestar/types";
 
-import {CompositeViewDU, ListCompositeType} from "@chainsafe/ssz";
+import {CompositeViewDU, fromHexString, ListCompositeType} from "@chainsafe/ssz";
 import {CachedBeaconStateAllForks, BeaconStateAllForks} from "../types.js";
 import {createCachedBeaconState} from "../cache/stateCache.js";
 import {EpochContextImmutableData} from "../cache/epochContext.js";
@@ -30,7 +30,7 @@ type DepositDataRootViewDU = CompositeViewDU<DepositDataRootListType>;
  * @param config
  * @param state
  */
-export function isValidGenesisState(config: ChainForkConfig, state: BeaconStateAllForks): boolean {
+export function isValidGenesisState(config: IChainForkConfig, state: BeaconStateAllForks): boolean {
   return state.genesisTime >= config.MIN_GENESIS_TIME && isValidGenesisValidators(config, state);
 }
 
@@ -39,7 +39,7 @@ export function isValidGenesisState(config: ChainForkConfig, state: BeaconStateA
  * @param config
  * @param state
  */
-export function isValidGenesisValidators(config: ChainForkConfig, state: BeaconStateAllForks): boolean {
+export function isValidGenesisValidators(config: IChainForkConfig, state: BeaconStateAllForks): boolean {
   return (
     getActiveValidatorIndices(state, computeEpochAtSlot(GENESIS_SLOT)).length >=
     config.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT
@@ -52,7 +52,7 @@ export function isValidGenesisValidators(config: ChainForkConfig, state: BeaconS
  * SLOW CODE - 🐢
  */
 export function getGenesisBeaconState(
-  config: ChainForkConfig,
+  config: IChainForkConfig,
   genesisEth1Data: phase0.Eth1Data,
   latestBlockHeader: phase0.BeaconBlockHeader
 ): BeaconStateAllForks {
@@ -93,7 +93,7 @@ export function getGenesisBeaconState(
 
 /**
  * Apply eth1 block hash to state.
- * @param config ChainForkConfig
+ * @param config IChainForkConfig
  * @param state BeaconState
  * @param eth1BlockHash eth1 block hash
  */
@@ -108,7 +108,11 @@ export function applyEth1BlockHash(state: CachedBeaconStateAllForks, eth1BlockHa
  * @param state BeaconState
  * @param eth1Timestamp eth1 block timestamp
  */
-export function applyTimestamp(config: ChainForkConfig, state: CachedBeaconStateAllForks, eth1Timestamp: number): void {
+export function applyTimestamp(
+  config: IChainForkConfig,
+  state: CachedBeaconStateAllForks,
+  eth1Timestamp: number
+): void {
   state.genesisTime = eth1Timestamp + config.GENESIS_DELAY;
 }
 
@@ -119,14 +123,14 @@ export function applyTimestamp(config: ChainForkConfig, state: CachedBeaconState
  *
  * SLOW CODE - 🐢
  *
- * @param config ChainForkConfig
+ * @param config IChainForkConfig
  * @param state BeaconState
  * @param newDeposits new deposits
  * @param fullDepositDataRootList full list of deposit data root from index 0
  * @returns active validator indices
  */
 export function applyDeposits(
-  config: ChainForkConfig,
+  config: IChainForkConfig,
   state: CachedBeaconStateAllForks,
   newDeposits: phase0.Deposit[],
   fullDepositDataRootList?: DepositDataRootViewDU
@@ -204,7 +208,7 @@ export function applyDeposits(
  * SLOW CODE - 🐢
  */
 export function initializeBeaconStateFromEth1(
-  config: ChainForkConfig,
+  config: IChainForkConfig,
   immutableData: EpochContextImmutableData,
   eth1BlockHash: Bytes32,
   eth1Timestamp: TimeSeconds,
@@ -236,7 +240,6 @@ export function initializeBeaconStateFromEth1(
 
   applyTimestamp(config, state, eth1Timestamp);
   applyEth1BlockHash(state, eth1BlockHash);
-
   // Process deposits
   applyDeposits(config, state, deposits, fullDepositDataRootList);
 
@@ -259,11 +262,30 @@ export function initializeBeaconStateFromEth1(
 
   if (GENESIS_SLOT >= config.BELLATRIX_FORK_EPOCH) {
     const stateBellatrix = state as CompositeViewDU<typeof ssz.bellatrix.BeaconState>;
-    stateBellatrix.fork.previousVersion = config.BELLATRIX_FORK_VERSION;
+    // https://github.com/protolambda/eth2-testnet-genesis/blob/master/state.go#L26
+    // previous fork must be consecutive!
+    // TODO: Change everywhere after Bellatrix.
+    stateBellatrix.fork.previousVersion = config.ALTAIR_FORK_VERSION;
     stateBellatrix.fork.currentVersion = config.BELLATRIX_FORK_VERSION;
     stateBellatrix.latestExecutionPayloadHeader =
       (executionPayloadHeader as CompositeViewDU<typeof ssz.bellatrix.ExecutionPayloadHeader>) ??
       ssz.bellatrix.ExecutionPayloadHeader.defaultViewDU();
+
+    // Apply state with depositCount = 0, to start with very fresh contract in execution layer
+    stateBellatrix.eth1Data.depositCount = 0;
+
+    const depositDatas = deposits.map((deposit) => deposit.data);
+    const {DepositData, DepositDataRootList} = ssz.phase0;
+
+    for (const [index, deposit] of deposits.entries()) {
+        const depositDataList = depositDatas.slice(0, index + 1);
+        stateBellatrix.eth1Data.depositRoot = DepositDataRootList.hashTreeRoot(
+            depositDataList.map((d) => DepositData.hashTreeRoot(d))
+        );
+    }
+
+    stateBellatrix.eth1Data.blockHash = executionPayloadHeader ?
+        executionPayloadHeader.blockHash : ssz.phase0.Eth1Data.defaultValue().blockHash;
   }
 
   if (GENESIS_SLOT >= config.CAPELLA_FORK_EPOCH) {
@@ -275,10 +297,10 @@ export function initializeBeaconStateFromEth1(
       ssz.capella.ExecutionPayloadHeader.defaultViewDU();
   }
 
-  if (GENESIS_SLOT >= config.DENEB_FORK_EPOCH) {
+  if (GENESIS_SLOT >= config.EIP4844_FORK_EPOCH) {
     const stateDeneb = state as CompositeViewDU<typeof ssz.deneb.BeaconState>;
-    stateDeneb.fork.previousVersion = config.DENEB_FORK_VERSION;
-    stateDeneb.fork.currentVersion = config.DENEB_FORK_VERSION;
+    stateDeneb.fork.previousVersion = config.EIP4844_FORK_VERSION;
+    stateDeneb.fork.currentVersion = config.EIP4844_FORK_VERSION;
     stateDeneb.latestExecutionPayloadHeader =
       (executionPayloadHeader as CompositeViewDU<typeof ssz.deneb.ExecutionPayloadHeader>) ??
       ssz.deneb.ExecutionPayloadHeader.defaultViewDU();

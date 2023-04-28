@@ -1,13 +1,13 @@
 import {ISignatureSet} from "@lodestar/state-transition";
-import {Metrics} from "../../metrics/index.js";
+import {IMetrics} from "../../metrics/index.js";
 import {IBlsVerifier} from "./interface.js";
 import {verifySignatureSetsMaybeBatch} from "./maybeBatch.js";
 import {getAggregatedPubkey, getAggregatedPubkeysCount} from "./utils.js";
 
 export class BlsSingleThreadVerifier implements IBlsVerifier {
-  private readonly metrics: Metrics | null;
+  private readonly metrics: IMetrics | null;
 
-  constructor({metrics = null}: {metrics: Metrics | null}) {
+  constructor({metrics = null}: {metrics: IMetrics | null}) {
     this.metrics = metrics;
   }
 
@@ -36,10 +36,5 @@ export class BlsSingleThreadVerifier implements IBlsVerifier {
 
   async close(): Promise<void> {
     // nothing to do
-  }
-
-  canAcceptWork(): boolean {
-    // Since sigs are verified blocking the main thread, there's no mechanism to throttle
-    return true;
   }
 }

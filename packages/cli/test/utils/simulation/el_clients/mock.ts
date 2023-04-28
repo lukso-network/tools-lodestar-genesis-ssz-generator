@@ -1,16 +1,13 @@
-import {SHARED_JWT_SECRET} from "../constants.js";
-import {ELClient, ELClientGenerator} from "../interfaces.js";
-import {getNodePorts} from "../utils/ports.js";
+import {ELClient, ELClientGenerator, ELGeneratorClientOptions, Runner, RunnerType} from "../interfaces.js";
 
-export const generateMockNode: ELClientGenerator<ELClient.Mock> = (opts, runner) => {
-  const {id, ttd, nodeIndex} = opts;
-  const {
-    el: {enginePort, httpPort},
-  } = getNodePorts(nodeIndex);
-  const ethRpcUrl = `http://127.0.0.1:${httpPort}`;
+export const generateMockNode: ELClientGenerator<ELClient.Mock> = (
+  {id, ethPort, enginePort, ttd, jwtSecretHex}: ELGeneratorClientOptions,
+  runner: Runner<RunnerType.ChildProcess> | Runner<RunnerType.Docker>
+) => {
+  const ethRpcUrl = `http://127.0.0.1:${ethPort}`;
   const engineRpcUrl = `http://127.0.0.1:${enginePort}`;
 
-  const job = runner.create([]);
+  const job = runner.create(id, []);
 
   return {
     client: ELClient.Mock,
@@ -18,7 +15,7 @@ export const generateMockNode: ELClientGenerator<ELClient.Mock> = (opts, runner)
     engineRpcUrl,
     ethRpcUrl,
     ttd,
-    jwtSecretHex: SHARED_JWT_SECRET,
+    jwtSecretHex,
     provider: null,
     job,
   };

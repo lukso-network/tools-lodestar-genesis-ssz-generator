@@ -1,13 +1,13 @@
 import {PeerId} from "@libp2p/interface-peer-id";
 import {peerIdFromString} from "@libp2p/peer-id";
-import {ChainForkConfig} from "@lodestar/config";
-import {Logger, pruneSetToMax} from "@lodestar/utils";
+import {IChainForkConfig} from "@lodestar/config";
+import {ILogger, pruneSetToMax} from "@lodestar/utils";
 import {Root, RootHex} from "@lodestar/types";
 import {fromHexString, toHexString} from "@chainsafe/ssz";
 import {INetwork, NetworkEvent, PeerAction} from "../network/index.js";
 import {IBeaconChain} from "../chain/index.js";
 import {BlockInput} from "../chain/blocks/types.js";
-import {Metrics} from "../metrics/index.js";
+import {IMetrics} from "../metrics/index.js";
 import {shuffle} from "../util/shuffle.js";
 import {byteArrayEquals} from "../util/bytes.js";
 import {BlockError, BlockErrorCode} from "../chain/errors/index.js";
@@ -32,11 +32,11 @@ export class UnknownBlockSync {
   private readonly knownBadBlocks = new Set<RootHex>();
 
   constructor(
-    private readonly config: ChainForkConfig,
+    private readonly config: IChainForkConfig,
     private readonly network: INetwork,
     private readonly chain: IBeaconChain,
-    private readonly logger: Logger,
-    private readonly metrics: Metrics | null,
+    private readonly logger: ILogger,
+    private readonly metrics: IMetrics | null,
     opts?: SyncOptions
   ) {
     if (!opts?.disableUnknownBlockSync) {
@@ -318,9 +318,7 @@ export class UnknownBlockSync {
       for (const peerIdStr of block.peerIdStrs) {
         // TODO: Refactor peerRpcScores to work with peerIdStr only
         const peer = peerIdFromString(peerIdStr);
-        this.network.reportPeer(peer, PeerAction.LowToleranceError, "BadBlockByRoot").catch((e) => {
-          this.logger.error("Error reporting peer", {}, e);
-        });
+        this.network.reportPeer(peer, PeerAction.LowToleranceError, "BadBlockByRoot");
       }
     }
 

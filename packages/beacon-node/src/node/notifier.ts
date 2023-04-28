@@ -1,8 +1,8 @@
-import {BeaconConfig} from "@lodestar/config";
+import {IBeaconConfig} from "@lodestar/config";
 import {Epoch} from "@lodestar/types";
 import {CachedBeaconStateAllForks} from "@lodestar/state-transition";
-import {ProtoBlock, ExecutionStatus} from "@lodestar/fork-choice";
-import {ErrorAborted, Logger, sleep, prettyBytes, prettyBytesShort} from "@lodestar/utils";
+import {ProtoBlock} from "@lodestar/fork-choice";
+import {ErrorAborted, ILogger, sleep, prettyBytes} from "@lodestar/utils";
 import {EPOCHS_PER_SYNC_COMMITTEE_PERIOD, SLOTS_PER_EPOCH} from "@lodestar/params";
 import {computeEpochAtSlot, isExecutionCachedStateType, isMergeTransitionComplete} from "@lodestar/state-transition";
 import {IBeaconChain} from "../chain/index.js";
@@ -18,8 +18,8 @@ type NodeNotifierModules = {
   network: INetwork;
   chain: IBeaconChain;
   sync: IBeaconSync;
-  config: BeaconConfig;
-  logger: Logger;
+  config: IBeaconConfig;
+  logger: ILogger;
   signal: AbortSignal;
 };
 
@@ -37,7 +37,7 @@ export async function runNodeNotifier(modules: NodeNotifierModules): Promise<voi
 
   try {
     while (!signal.aborted) {
-      const connectedPeerCount = network.getConnectedPeerCount();
+      const connectedPeerCount = network.getConnectedPeers().length;
 
       if (connectedPeerCount <= WARN_PEER_COUNT) {
         if (!hasLowPeerCount) {
@@ -59,17 +59,12 @@ export async function runNodeNotifier(modules: NodeNotifierModules): Promise<voi
       headSlotTimeSeries.addPoint(headSlot, Math.floor(Date.now() / 1000));
 
       const peersRow = `peers: ${connectedPeerCount}`;
-      const clockSlotRow = `slot: ${clockSlot}`;
+      const finalizedCheckpointRow = `finalized: ${prettyBytes(finalizedRoot)}:${finalizedEpoch}`;
+      const headRow = `head: ${headInfo.slot} ${prettyBytes(headInfo.blockRoot)}`;
 
       // Give info about empty slots if head < clock
       const skippedSlots = clockSlot - headInfo.slot;
-      // headDiffInfo to have space suffix if its a non empty string
-      const headDiffInfo =
-        skippedSlots > 0 ? (skippedSlots > 1000 ? `${headInfo.slot} ` : `(slot -${skippedSlots}) `) : "";
-      const headRow = `head: ${headDiffInfo}${prettyBytes(headInfo.blockRoot)}`;
-
-      const executionInfo = getHeadExecutionInfo(config, clockEpoch, headState, headInfo);
-      const finalizedCheckpointRow = `finalized: ${prettyBytes(finalizedRoot)}:${finalizedEpoch}`;
+      const clockSlotRow = `slot: ${clockSlot}` + (skippedSlots > 0 ? ` (skipped ${skippedSlots})` : "");
 
       // Log in TD progress in separate line to not clutter regular status update.
       // This line will only exist between BELLATRIX_FORK_EPOCH and TTD, a window of some days / weeks max.
@@ -85,6 +80,8 @@ export async function runNodeNotifier(modules: NodeNotifierModules): Promise<voi
 
         logger.info(`TTD in ${timeLeft} current TD ${tdProgress.td} / ${tdProgress.ttd}`);
       }
+
+      const executionInfo = getExecutionInfo(config, clockEpoch, headState, headInfo);
 
       let nodeState: string[];
       switch (sync.state) {
@@ -142,15 +139,15 @@ export async function runNodeNotifier(modules: NodeNotifierModules): Promise<voi
   }
 }
 
-function timeToNextHalfSlot(config: BeaconConfig, chain: IBeaconChain): number {
+function timeToNextHalfSlot(config: IBeaconConfig, chain: IBeaconChain): number {
   const msPerSlot = config.SECONDS_PER_SLOT * 1000;
   const msFromGenesis = Date.now() - chain.genesisTime * 1000;
   const msToNextSlot = msPerSlot - (msFromGenesis % msPerSlot);
   return msToNextSlot > msPerSlot / 2 ? msToNextSlot - msPerSlot / 2 : msToNextSlot + msPerSlot / 2;
 }
 
-function getHeadExecutionInfo(
-  config: BeaconConfig,
+function getExecutionInfo(
+  config: IBeaconConfig,
   clockEpoch: Epoch,
   headState: CachedBeaconStateAllForks,
   headInfo: ProtoBlock
@@ -163,17 +160,9 @@ function getHeadExecutionInfo(
     // Add execution status to notifier only if head is on/post bellatrix
     if (isExecutionCachedStateType(headState)) {
       if (isMergeTransitionComplete(headState)) {
-        const executionPayloadHashInfo =
-          headInfo.executionStatus !== ExecutionStatus.PreMerge ? headInfo.executionPayloadBlockHash : "empty";
-        const executionPayloadNumberInfo =
-          headInfo.executionStatus !== ExecutionStatus.PreMerge ? headInfo.executionPayloadNumber : NaN;
-        return [
-          `exec-block: ${executionStatusStr}(${executionPayloadNumberInfo} ${prettyBytesShort(
-            executionPayloadHashInfo
-          )})`,
-        ];
+        return [`execution: ${executionStatusStr}(${prettyBytes(headInfo.executionPayloadBlockHash ?? "empty")})`];
       } else {
-        return [`exec-block: ${executionStatusStr}`];
+        return [`execution: ${executionStatusStr}`];
       }
     } else {
       return [];

@@ -1,11 +1,11 @@
 import {computeEpochAtSlot} from "@lodestar/state-transition";
 import {Epoch, Slot} from "@lodestar/types";
-import {BeaconClock} from "../../../src/chain/index.js";
+import {IBeaconClock} from "../../../src/chain/index.js";
 
 /**
  * Mock clock that does not progress time unless calling setSlot()
  */
-export class ClockStopped implements BeaconClock {
+export class ClockStopped implements IBeaconClock {
   constructor(private slot: Slot) {}
 
   get currentSlot(): Slot {

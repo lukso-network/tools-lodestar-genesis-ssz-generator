@@ -10,8 +10,7 @@ export const missedBlocksAssertion: SimulationAssertion<"missedBlocks", number[]
   async capture({node, slot, epoch, clock, dependantStores}) {
     if (!clock.isLastSlotOfEpoch(slot)) return null;
 
-    // We need to start from the first slot as we don't store data for genesis
-    const startSlot = epoch === 0 ? 1 : clock.getFirstSlotOfEpoch(epoch);
+    const startSlot = clock.getFirstSlotOfEpoch(epoch);
     const endSlot = slot;
 
     const missedSlots: number[] = [];

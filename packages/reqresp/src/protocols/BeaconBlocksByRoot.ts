@@ -1,10 +1,10 @@
 import {allForks, phase0, ssz} from "@lodestar/types";
 import {toHex} from "@lodestar/utils";
-import {ContextBytesType, DuplexProtocolDefinitionGenerator, Encoding, MixedProtocolDefinition} from "../types.js";
+import {ContextBytesType, Encoding, ProtocolDefinitionGenerator, ProtocolDefinition} from "../types.js";
 
 /* eslint-disable @typescript-eslint/naming-convention */
 const BeaconBlocksByRootCommon: Pick<
-  MixedProtocolDefinition<phase0.BeaconBlocksByRootRequest, allForks.SignedBeaconBlock>,
+  ProtocolDefinition<phase0.BeaconBlocksByRootRequest, allForks.SignedBeaconBlock>,
   "method" | "encoding" | "requestType" | "renderRequestBody" | "inboundRateLimits"
 > = {
   method: "beacon_blocks_by_root",
@@ -18,7 +18,7 @@ const BeaconBlocksByRootCommon: Pick<
   },
 };
 
-export const BeaconBlocksByRoot: DuplexProtocolDefinitionGenerator<
+export const BeaconBlocksByRoot: ProtocolDefinitionGenerator<
   phase0.BeaconBlocksByRootRequest,
   allForks.SignedBeaconBlock
 > = (_modules, handler) => {
@@ -31,7 +31,7 @@ export const BeaconBlocksByRoot: DuplexProtocolDefinitionGenerator<
   };
 };
 
-export const BeaconBlocksByRootV2: DuplexProtocolDefinitionGenerator<
+export const BeaconBlocksByRootV2: ProtocolDefinitionGenerator<
   phase0.BeaconBlocksByRootRequest,
   allForks.SignedBeaconBlock
 > = (modules, handler) => {

@@ -1,7 +1,7 @@
 import {SecretKey} from "@chainsafe/bls/types";
 import {Api} from "@lodestar/api";
 import {chainConfig} from "@lodestar/config/default";
-import {createBeaconConfig, ChainConfig} from "@lodestar/config";
+import {createIBeaconConfig, IChainConfig} from "@lodestar/config";
 import {Signer, SignerType, ValidatorStore} from "../../src/index.js";
 import {IndicesService} from "../../src/services/indices.js";
 import {ValidatorProposerConfig} from "../../src/services/validatorStore.js";
@@ -14,7 +14,7 @@ import {SlashingProtectionMock} from "./slashingProtectionMock.js";
 export function initValidatorStore(
   secretKeys: SecretKey[],
   api: Api,
-  customChainConfig: ChainConfig = chainConfig,
+  customChainConfig: IChainConfig = chainConfig,
   valProposerConfig: ValidatorProposerConfig = {defaultConfig: {builder: {}}, proposerConfig: {}}
 ): ValidatorStore {
   const logger = testLogger();
@@ -28,7 +28,7 @@ export function initValidatorStore(
   const metrics = null;
   const indicesService = new IndicesService(logger, api, metrics);
   return new ValidatorStore(
-    createBeaconConfig(customChainConfig, genesisValidatorsRoot),
+    createIBeaconConfig(customChainConfig, genesisValidatorsRoot),
     new SlashingProtectionMock(),
     indicesService,
     null,

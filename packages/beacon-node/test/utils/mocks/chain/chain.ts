@@ -2,19 +2,14 @@ import sinon from "sinon";
 
 import {CompositeTypeAny, toHexString, TreeView} from "@chainsafe/ssz";
 import {phase0, allForks, UintNum64, Root, Slot, ssz, Uint16, UintBn64, RootHex, deneb, Wei} from "@lodestar/types";
-import {BeaconConfig} from "@lodestar/config";
-import {
-  BeaconStateAllForks,
-  CachedBeaconStateAllForks,
-  Index2PubkeyCache,
-  PubkeyIndexMap,
-} from "@lodestar/state-transition";
+import {IBeaconConfig} from "@lodestar/config";
+import {BeaconStateAllForks, CachedBeaconStateAllForks} from "@lodestar/state-transition";
 import {CheckpointWithHex, IForkChoice, ProtoBlock, ExecutionStatus, AncestorStatus} from "@lodestar/fork-choice";
 import {defaultOptions as defaultValidatorOptions} from "@lodestar/validator";
-import {Logger} from "@lodestar/utils";
+import {ILogger} from "@lodestar/utils";
 
 import {ChainEventEmitter, IBeaconChain} from "../../../../src/chain/index.js";
-import {BeaconClock} from "../../../../src/chain/clock/interface.js";
+import {IBeaconClock} from "../../../../src/chain/clock/interface.js";
 import {CheckpointStateCache, StateContextCache} from "../../../../src/chain/stateCache/index.js";
 import {LocalClock} from "../../../../src/chain/clock/index.js";
 import {IStateRegenerator, StateRegenerator} from "../../../../src/chain/regen/index.js";
@@ -47,33 +42,30 @@ import {CheckpointBalancesCache} from "../../../../src/chain/balancesCache.js";
 import {IChainOptions} from "../../../../src/chain/options.js";
 import {BlockAttributes} from "../../../../src/chain/produceBlock/produceBlockBody.js";
 import {ReqRespBlockResponse} from "../../../../src/network/index.js";
-import {SeenAttestationDatas} from "../../../../src/chain/seenCache/seenAttestationData.js";
-import {IExecutionBuilder} from "../../../../src/execution/index.js";
 
 /* eslint-disable @typescript-eslint/no-empty-function */
 
-export type MockChainParams = {
+export interface IMockChainParams {
   genesisTime?: UintNum64;
   chainId: Uint16;
   networkId: UintBn64;
   state: BeaconStateAllForks;
-  config: BeaconConfig;
-};
+  config: IBeaconConfig;
+}
 
 export class MockBeaconChain implements IBeaconChain {
   readonly genesisTime: UintNum64;
   readonly genesisValidatorsRoot: Root;
   readonly eth1 = new Eth1ForBlockProductionDisabled();
   readonly executionEngine = new ExecutionEngineDisabled();
-  readonly config: BeaconConfig;
-  readonly logger: Logger;
+  readonly config: IBeaconConfig;
+  readonly logger: ILogger;
   readonly metrics = null;
   readonly opts: IChainOptions = {
     persistInvalidSszObjectsDir: "",
     proposerBoostEnabled: false,
     safeSlotsToImportOptimistically: 0,
     suggestedFeeRecipient: "0x0000000000000000000000000000000000000000",
-    archiveStateEpochFrequency: 1024,
   };
   readonly anchorStateLatestBlockSlot: Slot;
 
@@ -83,18 +75,16 @@ export class MockBeaconChain implements IBeaconChain {
   checkpointStateCache: CheckpointStateCache;
   chainId: Uint16;
   networkId: UintBn64;
-  clock: BeaconClock;
+  clock: IBeaconClock;
   regen: IStateRegenerator;
   emitter: ChainEventEmitter;
   lightClientServer: LightClientServer;
   reprocessController: ReprocessController;
-  readonly pubkey2index: PubkeyIndexMap;
-  readonly index2pubkey: Index2PubkeyCache;
 
   // Ops pool
-  readonly attestationPool: AttestationPool;
+  readonly attestationPool = new AttestationPool();
   readonly aggregatedAttestationPool = new AggregatedAttestationPool();
-  readonly syncCommitteeMessagePool: SyncCommitteeMessagePool;
+  readonly syncCommitteeMessagePool = new SyncCommitteeMessagePool();
   readonly syncContributionAndProofPool = new SyncContributionAndProofPool();
   readonly opPool = new OpPool();
 
@@ -105,7 +95,6 @@ export class MockBeaconChain implements IBeaconChain {
   readonly seenBlockProposers = new SeenBlockProposers();
   readonly seenSyncCommitteeMessages = new SeenSyncCommitteeMessages();
   readonly seenContributionAndProof = new SeenContributionAndProof(null);
-  readonly seenAttestationDatas = new SeenAttestationDatas(null);
   readonly seenBlockAttesters = new SeenBlockAttesters();
 
   readonly beaconProposerCache = new BeaconProposerCache({
@@ -118,7 +107,7 @@ export class MockBeaconChain implements IBeaconChain {
 
   readonly producedBlobsSidecarCache = new Map<RootHex, deneb.BlobsSidecar>();
 
-  constructor({genesisTime, chainId, networkId, state, config}: MockChainParams) {
+  constructor({genesisTime, chainId, networkId, state, config}: IMockChainParams) {
     this.logger = testLogger();
     this.genesisTime = genesisTime ?? state.genesisTime;
     this.genesisValidatorsRoot = state.genesisValidatorsRoot;
@@ -136,8 +125,6 @@ export class MockBeaconChain implements IBeaconChain {
       emitter: this.emitter,
       signal: this.abortController.signal,
     });
-    this.attestationPool = new AttestationPool(this.clock, (2 / 3) * this.config.SECONDS_PER_SLOT);
-    this.syncCommitteeMessagePool = new SyncCommitteeMessagePool(this.clock, (2 / 3) * this.config.SECONDS_PER_SLOT);
     this.forkChoice = mockForkChoice();
     this.stateCache = new StateContextCache({});
     this.checkpointStateCache = new CheckpointStateCache({});
@@ -162,11 +149,7 @@ export class MockBeaconChain implements IBeaconChain {
       }
     );
     this.reprocessController = new ReprocessController(null);
-    this.pubkey2index = new PubkeyIndexMap();
-    this.index2pubkey = [];
   }
-
-  executionBuilder?: IExecutionBuilder | undefined;
 
   validatorSeenAtEpoch(): boolean {
     return false;
@@ -179,10 +162,6 @@ export class MockBeaconChain implements IBeaconChain {
   }
 
   async getHeadStateAtCurrentEpoch(): Promise<CachedBeaconStateAllForks> {
-    return this.state;
-  }
-
-  async getHeadStateAtEpoch(): Promise<CachedBeaconStateAllForks> {
     return this.state;
   }
 
@@ -231,15 +210,11 @@ export class MockBeaconChain implements IBeaconChain {
     return this.forkChoice.getHead();
   }
 
-  async waitForBlock(): Promise<boolean> {
+  async waitForBlockOfAttestation(): Promise<boolean> {
     return false;
   }
 
   persistInvalidSszObject(): void {
-    return;
-  }
-
-  persistInvalidSszBytes(): void {
     return;
   }
 
@@ -249,14 +224,6 @@ export class MockBeaconChain implements IBeaconChain {
 
   async updateBeaconProposerData(): Promise<void> {}
   updateBuilderStatus(): void {}
-
-  regenCanAcceptWork(): boolean {
-    return true;
-  }
-
-  blsThreadPoolCanAcceptWork(): boolean {
-    return true;
-  }
 }
 
 const root = ssz.Root.defaultValue() as Uint8Array;
@@ -293,7 +260,6 @@ function mockForkChoice(): IForkChoice {
     getHead: () => block,
     updateHead: () => block,
     getHeads: () => [block],
-    getAllNodes: () => [{...block, weight: 1}],
     getFinalizedCheckpoint: () => checkpoint,
     getJustifiedCheckpoint: () => checkpoint,
     onBlock: () => block,

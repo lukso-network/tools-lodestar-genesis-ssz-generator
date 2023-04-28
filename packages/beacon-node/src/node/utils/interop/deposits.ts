@@ -1,7 +1,7 @@
 import {digest} from "@chainsafe/as-sha256";
 import {phase0, ssz} from "@lodestar/types";
 import {toGindex, Tree} from "@chainsafe/persistent-merkle-tree";
-import {ChainConfig} from "@lodestar/config";
+import {IChainConfig} from "@lodestar/config";
 import {computeDomain, computeSigningRoot, interopSecretKeys, ZERO_HASH} from "@lodestar/state-transition";
 import {
   BLS_WITHDRAWAL_PREFIX,
@@ -15,10 +15,10 @@ import {DepositTree} from "../../../db/repositories/depositDataRoot.js";
  * Compute and return deposit data from other validators.
  */
 export function interopDeposits(
-  config: ChainConfig,
-  depositDataRootList: DepositTree,
-  validatorCount: number,
-  {withEth1Credentials}: {withEth1Credentials?: boolean} = {}
+    config: IChainConfig,
+    depositDataRootList: DepositTree,
+    validatorCount: number,
+    {withEth1Credentials}: {withEth1Credentials?: boolean} = {}
 ): phase0.Deposit[] {
   depositDataRootList.commit();
   const depositTreeDepth = depositDataRootList.type.depth;
@@ -48,6 +48,27 @@ export function interopDeposits(
     return {
       proof: new Tree(depositDataRootList.node).getSingleProof(toGindex(depositTreeDepth, BigInt(i))),
       data,
+    };
+  });
+}
+
+
+// deterministicDeposits assume that dataRootList will be committed within a function body
+export function deterministicDeposits(
+    config: IChainConfig,
+    depositDataRootList: DepositTree,
+    deposits: phase0.DepositData[],
+): phase0.Deposit[] {
+  depositDataRootList.commit();
+  const depositTreeDepth = depositDataRootList.type.depth;
+
+  return deposits.map((depositData, i) => {
+    depositDataRootList.push(ssz.phase0.DepositData.hashTreeRoot(depositData));
+    depositDataRootList.commit();
+
+    return {
+      proof: new Tree(depositDataRootList.node).getSingleProof(toGindex(depositTreeDepth, BigInt(i))),
+      data: depositData,
     };
   });
 }

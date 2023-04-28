@@ -1,6 +1,5 @@
 import {SYNC_COMMITTEE_SIZE} from "@lodestar/params";
 import {Slot, SyncPeriod, allForks} from "@lodestar/types";
-import {ChainForkConfig} from "@lodestar/config";
 import {pruneSetToMax} from "@lodestar/utils";
 import {computeSyncPeriodAtSlot, deserializeSyncCommittee, sumBits} from "../utils/index.js";
 import {isBetterUpdate, LightClientUpdateSummary, toLightClientUpdateSummary} from "./isBetterUpdate.js";
@@ -14,7 +13,6 @@ export interface ProcessUpdateOpts {
 }
 
 export function processLightClientUpdate(
-  config: ChainForkConfig,
   store: ILightClientStore,
   currentSlot: Slot,
   opts: ProcessUpdateOpts,
@@ -29,7 +27,7 @@ export function processLightClientUpdate(
   // Note: store.getSyncCommitteeAtPeriod() may advance store
   const syncCommittee = getSyncCommitteeAtPeriod(store, updateSignaturePeriod, opts);
 
-  validateLightClientUpdate(config, store, update, syncCommittee);
+  validateLightClientUpdate(store, update, syncCommittee);
 
   // Track the maximum number of active participants in the committee signatures
   const syncCommitteeTrueBits = sumBits(update.syncAggregate.syncCommitteeBits);

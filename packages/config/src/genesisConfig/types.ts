@@ -3,14 +3,14 @@ import {DomainType, ForkDigest, Root, Slot} from "@lodestar/types";
 
 export type ForkDigestHex = string;
 
-export type ForkDigestContext = {
+export interface IForkDigestContext {
   forkDigest2ForkName(forkDigest: ForkDigest | ForkDigestHex): ForkName;
   forkDigest2ForkNameOption(forkDigest: ForkDigest | ForkDigestHex): ForkName | null;
   forkName2ForkDigest(forkName: ForkName): ForkDigest;
   forkName2ForkDigestHex(forkName: ForkName): ForkDigestHex;
-};
+}
 
-export interface CachedGenesis extends ForkDigestContext {
+export interface ICachedGenesis extends IForkDigestContext {
   /**
    * Return the signature domain (fork version concatenated with domain type) of a message.
    *

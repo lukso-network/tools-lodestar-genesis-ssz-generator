@@ -3,18 +3,18 @@ import {expect} from "chai";
 import {retry, RetryOptions} from "../../src/retry.js";
 
 describe("retry", () => {
-  type TestCase = {
+  interface ITestCase {
     id: string;
     fn: (attempt: number) => Promise<any>;
     opts?: RetryOptions;
     result: any | Error;
-  };
+  }
 
   const sampleError = Error("SAMPLE ERROR");
   const sampleResult = "SAMPLE RESULT";
   const retries = 3;
 
-  const testCases: TestCase[] = [
+  const testCases: ITestCase[] = [
     {
       id: "Reject",
       fn: () => Promise.reject(sampleError),

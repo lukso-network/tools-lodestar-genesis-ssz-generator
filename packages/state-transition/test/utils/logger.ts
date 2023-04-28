@@ -1,5 +1,5 @@
-import {createWinstonLogger, Logger} from "@lodestar/utils";
+import {createWinstonLogger, ILogger} from "@lodestar/utils";
 
-export function profilerLogger(): Logger {
+export function profilerLogger(): ILogger {
   return createWinstonLogger();
 }

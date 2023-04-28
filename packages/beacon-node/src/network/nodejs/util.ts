@@ -3,7 +3,8 @@ import {Registry} from "prom-client";
 import {ENR, SignableENR} from "@chainsafe/discv5";
 import {Libp2p} from "../interface.js";
 import {Eth2PeerDataStore} from "../peers/datastore.js";
-import {defaultDiscv5Options, defaultNetworkOptions, NetworkOptions} from "../options.js";
+import {defaultDiscv5Options, defaultNetworkOptions, INetworkOptions} from "../options.js";
+import {isLocalMultiAddr, clearMultiaddrUDP} from "../util.js";
 import {createNodejsLibp2p as _createNodejsLibp2p} from "./bundle.js";
 
 export type NodeJsLibp2pOpts = {
@@ -21,7 +22,7 @@ export type NodeJsLibp2pOpts = {
  */
 export async function createNodeJsLibp2p(
   peerIdOrPromise: PeerId | Promise<PeerId>,
-  networkOpts: Partial<NetworkOptions> = {},
+  networkOpts: Partial<INetworkOptions> = {},
   nodeJsLibp2pOpts: NodeJsLibp2pOpts = {}
 ): Promise<Libp2p> {
   const peerId = await Promise.resolve(peerIdOrPromise);
@@ -30,8 +31,14 @@ export async function createNodeJsLibp2p(
   const enr = networkOpts.discv5?.enr;
   const {peerStoreDir, disablePeerDiscovery} = nodeJsLibp2pOpts;
 
-  if (enr !== undefined && typeof enr !== "string" && !(enr instanceof SignableENR)) {
-    throw Error("network.discv5.enr must be an instance of SignableENR");
+  if (enr !== undefined && typeof enr !== "string") {
+    if (enr instanceof SignableENR) {
+      if (enr.getLocationMultiaddr("udp") && !isLocalMultiAddr(enr.getLocationMultiaddr("udp"))) {
+        clearMultiaddrUDP(enr);
+      }
+    } else {
+      throw Error("network.discv5.enr must be an instance of ENR");
+    }
   }
 
   let datastore: undefined | Eth2PeerDataStore = undefined;

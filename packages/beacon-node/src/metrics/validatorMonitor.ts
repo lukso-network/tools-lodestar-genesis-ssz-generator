@@ -1,11 +1,11 @@
-import {computeEpochAtSlot, AttesterStatus, parseAttesterFlags} from "@lodestar/state-transition";
-import {Logger} from "@lodestar/utils";
+import {computeEpochAtSlot, IAttesterStatus, parseAttesterFlags} from "@lodestar/state-transition";
+import {ILogger} from "@lodestar/utils";
 import {allForks, altair} from "@lodestar/types";
-import {ChainForkConfig} from "@lodestar/config";
+import {IChainForkConfig} from "@lodestar/config";
 import {MIN_ATTESTATION_INCLUSION_DELAY, SLOTS_PER_EPOCH} from "@lodestar/params";
 import {Epoch, Slot, ValidatorIndex} from "@lodestar/types";
 import {IndexedAttestation, SignedAggregateAndProof} from "@lodestar/types/phase0";
-import {LodestarMetrics} from "./metrics/lodestar.js";
+import {ILodestarMetrics} from "./metrics/lodestar.js";
 
 /** The validator monitor collects per-epoch data about each monitored validator.
  * Historical data will be kept around for `HISTORIC_EPOCHS` before it is pruned.
@@ -18,10 +18,10 @@ export enum OpSource {
   gossip = "gossip",
 }
 
-export type ValidatorMonitor = {
+export interface IValidatorMonitor {
   registerLocalValidator(index: number): void;
   registerLocalValidatorInSyncCommittee(index: number, untilEpoch: Epoch): void;
-  registerValidatorStatuses(currentEpoch: Epoch, statuses: AttesterStatus[], balances?: number[]): void;
+  registerValidatorStatuses(currentEpoch: Epoch, statuses: IAttesterStatus[], balances?: number[]): void;
   registerBeaconBlock(src: OpSource, seenTimestampSec: Seconds, block: allForks.BeaconBlock): void;
   registerImportedBlock(block: allForks.BeaconBlock, data: {proposerBalanceDelta: number}): void;
   submitUnaggregatedAttestation(
@@ -48,7 +48,7 @@ export type ValidatorMonitor = {
   ): void;
   registerSyncAggregateInBlock(epoch: Epoch, syncAggregate: altair.SyncAggregate, syncCommitteeIndices: number[]): void;
   scrapeMetrics(slotClock: Slot): void;
-};
+}
 
 /** Information required to reward some validator during the current and previous epoch. */
 type ValidatorStatus = {
@@ -83,7 +83,7 @@ type ValidatorStatus = {
   inclusionDistance: number;
 };
 
-function statusToSummary(status: AttesterStatus): ValidatorStatus {
+function statusToSummary(status: IAttesterStatus): ValidatorStatus {
   const flags = parseAttesterFlags(status.flags);
   return {
     isSlashed: flags.unslashed,
@@ -179,11 +179,11 @@ type MonitoredValidator = {
 };
 
 export function createValidatorMonitor(
-  metrics: LodestarMetrics,
-  config: ChainForkConfig,
+  metrics: ILodestarMetrics,
+  config: IChainForkConfig,
   genesisTime: number,
-  logger: Logger
-): ValidatorMonitor {
+  logger: ILogger
+): IValidatorMonitor {
   /** The validators that require additional monitoring. */
   const validators = new Map<ValidatorIndex, MonitoredValidator>();
 

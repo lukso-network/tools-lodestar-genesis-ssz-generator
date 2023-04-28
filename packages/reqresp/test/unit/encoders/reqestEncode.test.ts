@@ -12,7 +12,7 @@ describe("encoders / requestEncode", () => {
       it(`${id}`, async () => {
         const encodedChunks = await pipe(requestEncode(protocol, requestBody), all);
         expectEqualByteChunks(
-          encodedChunks as Uint8Array[],
+          encodedChunks,
           chunks.map((c) => c.subarray())
         );
       });

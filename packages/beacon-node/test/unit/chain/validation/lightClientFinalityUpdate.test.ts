@@ -1,6 +1,6 @@
 import {expect} from "chai";
 import sinon from "sinon";
-import {createBeaconConfig, createChainForkConfig, defaultChainConfig} from "@lodestar/config";
+import {createIBeaconConfig, createIChainForkConfig, defaultChainConfig} from "@lodestar/config";
 import {altair, ssz} from "@lodestar/types";
 
 import {computeTimeAtSlot} from "@lodestar/state-transition";
@@ -13,7 +13,7 @@ import {IBeaconChain} from "../../../../src/chain/index.js";
 describe("Light Client Finality Update validation", function () {
   let fakeClock: sinon.SinonFakeTimers;
   const afterEachCallbacks: (() => Promise<void> | void)[] = [];
-  const config = createChainForkConfig({
+  const config = createIChainForkConfig({
     ...defaultChainConfig,
     /* eslint-disable @typescript-eslint/naming-convention */
     ALTAIR_FORK_EPOCH: 1,
@@ -41,7 +41,7 @@ describe("Light Client Finality Update validation", function () {
       },
     });
 
-    const beaconConfig = createBeaconConfig(config, state.genesisValidatorsRoot);
+    const beaconConfig = createIBeaconConfig(config, state.genesisValidatorsRoot);
     const chain = new MockBeaconChain({
       genesisTime: 0,
       chainId: 0,
@@ -58,8 +58,7 @@ describe("Light Client Finality Update validation", function () {
   }
 
   it("should return invalid - finality update already forwarded", async () => {
-    const lightclientFinalityUpdate: altair.LightClientFinalityUpdate =
-      ssz.altair.LightClientFinalityUpdate.defaultValue();
+    const lightclientFinalityUpdate: altair.LightClientFinalityUpdate = ssz.altair.LightClientFinalityUpdate.defaultValue();
     lightclientFinalityUpdate.finalizedHeader.beacon.slot = 2;
 
     const chain = mockChain();
@@ -80,8 +79,7 @@ describe("Light Client Finality Update validation", function () {
 
   it("should return invalid - finality update received too early", async () => {
     //No other optimistic_update with a lower or equal attested_header.beacon.slot was already forwarded on the network
-    const lightClientFinalityUpdate: altair.LightClientFinalityUpdate =
-      ssz.altair.LightClientFinalityUpdate.defaultValue();
+    const lightClientFinalityUpdate: altair.LightClientFinalityUpdate = ssz.altair.LightClientFinalityUpdate.defaultValue();
     lightClientFinalityUpdate.finalizedHeader.beacon.slot = 2;
     lightClientFinalityUpdate.signatureSlot = 4;
 
@@ -101,8 +99,7 @@ describe("Light Client Finality Update validation", function () {
   });
 
   it("should return invalid - finality update not matching local", async () => {
-    const lightClientFinalityUpdate: altair.LightClientFinalityUpdate =
-      ssz.altair.LightClientFinalityUpdate.defaultValue();
+    const lightClientFinalityUpdate: altair.LightClientFinalityUpdate = ssz.altair.LightClientFinalityUpdate.defaultValue();
     lightClientFinalityUpdate.finalizedHeader.beacon.slot = 42;
     lightClientFinalityUpdate.attestedHeader.beacon.slot = lightClientFinalityUpdate.finalizedHeader.beacon.slot + 1;
 
@@ -129,8 +126,7 @@ describe("Light Client Finality Update validation", function () {
   });
 
   it("should return invalid - not matching local when no local finality update yet", async () => {
-    const lightClientFinalityUpdate: altair.LightClientFinalityUpdate =
-      ssz.altair.LightClientFinalityUpdate.defaultValue();
+    const lightClientFinalityUpdate: altair.LightClientFinalityUpdate = ssz.altair.LightClientFinalityUpdate.defaultValue();
     lightClientFinalityUpdate.finalizedHeader.beacon.slot = 42;
     lightClientFinalityUpdate.attestedHeader.beacon.slot = lightClientFinalityUpdate.finalizedHeader.beacon.slot + 1;
 
@@ -154,8 +150,7 @@ describe("Light Client Finality Update validation", function () {
   });
 
   it("should not throw for valid update", async () => {
-    const lightClientFinalityUpdate: altair.LightClientFinalityUpdate =
-      ssz.altair.LightClientFinalityUpdate.defaultValue();
+    const lightClientFinalityUpdate: altair.LightClientFinalityUpdate = ssz.altair.LightClientFinalityUpdate.defaultValue();
     const chain = mockChain();
 
     // satisfy:

@@ -1,12 +1,12 @@
 import sinon from "sinon";
 import {expect} from "chai";
-import {createBeaconConfig, createChainForkConfig, defaultChainConfig} from "@lodestar/config";
+import {createIBeaconConfig, createIChainForkConfig, defaultChainConfig} from "@lodestar/config";
+import {capella, phase0, ssz, allForks} from "@lodestar/types";
 import {sleep} from "@lodestar/utils";
 
 import {computeStartSlotAtEpoch} from "@lodestar/state-transition";
-import {ssz} from "@lodestar/types";
-import {getReqRespHandlers, Network, NetworkInitModules} from "../../../src/network/index.js";
-import {defaultNetworkOptions, NetworkOptions} from "../../../src/network/options.js";
+import {getReqRespHandlers, Network} from "../../../src/network/index.js";
+import {defaultNetworkOptions, INetworkOptions} from "../../../src/network/options.js";
 import {GossipType, GossipHandlers} from "../../../src/network/gossip/index.js";
 
 import {MockBeaconChain, zeroProtoBlock} from "../../utils/mocks/chain/chain.js";
@@ -17,7 +17,7 @@ import {testLogger} from "../../utils/logger.js";
 
 const multiaddr = "/ip4/127.0.0.1/tcp/0";
 
-const opts: NetworkOptions = {
+const opts: INetworkOptions = {
   ...defaultNetworkOptions,
   maxPeers: 1,
   targetPeers: 1,
@@ -25,12 +25,11 @@ const opts: NetworkOptions = {
   localMultiaddrs: [],
   discv5FirstQueryDelayMs: 0,
   discv5: null,
-  skipParamsLog: true,
 };
 
 // Schedule all forks at ALTAIR_FORK_EPOCH to avoid generating the pubkeys cache
 /* eslint-disable @typescript-eslint/naming-convention */
-const config = createChainForkConfig({
+const config = createIChainForkConfig({
   ...defaultChainConfig,
   ALTAIR_FORK_EPOCH: 1,
   BELLATRIX_FORK_EPOCH: 1,
@@ -64,7 +63,7 @@ describe("gossipsub", function () {
       },
     });
 
-    const beaconConfig = createBeaconConfig(config, state.genesisValidatorsRoot);
+    const beaconConfig = createIBeaconConfig(config, state.genesisValidatorsRoot);
     const chain = new MockBeaconChain({
       genesisTime: 0,
       chainId: 0,
@@ -87,9 +86,10 @@ describe("gossipsub", function () {
     const loggerA = testLogger("A");
     const loggerB = testLogger("B");
 
-    const modules: Omit<NetworkInitModules, "opts" | "peerId" | "logger"> = {
+    const modules = {
       config: beaconConfig,
       chain,
+      db,
       reqRespHandlers,
       gossipHandlers,
       signal: controller.signal,
@@ -117,12 +117,12 @@ describe("gossipsub", function () {
   }
 
   it("Publish and receive a voluntaryExit", async function () {
-    let onVoluntaryExit: (ve: Uint8Array) => void;
-    const onVoluntaryExitPromise = new Promise<Uint8Array>((resolve) => (onVoluntaryExit = resolve));
+    let onVoluntaryExit: (ve: phase0.SignedVoluntaryExit) => void;
+    const onVoluntaryExitPromise = new Promise<phase0.SignedVoluntaryExit>((resolve) => (onVoluntaryExit = resolve));
 
     const {netA, netB, controller} = await mockModules({
-      [GossipType.voluntary_exit]: async ({serializedData}) => {
-        onVoluntaryExit(serializedData);
+      [GossipType.voluntary_exit]: async (voluntaryExit) => {
+        onVoluntaryExit(voluntaryExit);
       },
     });
 
@@ -130,8 +130,8 @@ describe("gossipsub", function () {
     expect(Array.from(netA.getConnectionsByPeer().values()).length).to.equal(1);
     expect(Array.from(netB.getConnectionsByPeer().values()).length).to.equal(1);
 
-    await netA.subscribeGossipCoreTopics();
-    await netB.subscribeGossipCoreTopics();
+    netA.subscribeGossipCoreTopics();
+    netB.subscribeGossipCoreTopics();
 
     // Wait to have a peer connected to a topic
     while (!controller.signal.aborted) {
@@ -146,15 +146,15 @@ describe("gossipsub", function () {
     await netA.gossip.publishVoluntaryExit(voluntaryExit);
 
     const receivedVoluntaryExit = await onVoluntaryExitPromise;
-    expect(receivedVoluntaryExit).to.deep.equal(ssz.phase0.SignedVoluntaryExit.serialize(voluntaryExit));
+    expect(receivedVoluntaryExit).to.deep.equal(voluntaryExit);
   });
 
   it("Publish and receive 1000 voluntaryExits", async function () {
-    const receivedVoluntaryExits: Uint8Array[] = [];
+    const receivedVoluntaryExits: phase0.SignedVoluntaryExit[] = [];
 
     const {netA, netB, controller} = await mockModules({
-      [GossipType.voluntary_exit]: async ({serializedData}) => {
-        receivedVoluntaryExits.push(serializedData);
+      [GossipType.voluntary_exit]: async (voluntaryExit) => {
+        receivedVoluntaryExits.push(voluntaryExit);
       },
     });
 
@@ -162,8 +162,8 @@ describe("gossipsub", function () {
     expect(Array.from(netA.getConnectionsByPeer().values()).length).to.equal(1);
     expect(Array.from(netB.getConnectionsByPeer().values()).length).to.equal(1);
 
-    await netA.subscribeGossipCoreTopics();
-    await netB.subscribeGossipCoreTopics();
+    netA.subscribeGossipCoreTopics();
+    netB.subscribeGossipCoreTopics();
 
     // Wait to have a peer connected to a topic
     while (!controller.signal.aborted) {
@@ -194,12 +194,14 @@ describe("gossipsub", function () {
   });
 
   it("Publish and receive a blsToExecutionChange", async function () {
-    let onBlsToExecutionChange: (blsToExec: Uint8Array) => void;
-    const onBlsToExecutionChangePromise = new Promise<Uint8Array>((resolve) => (onBlsToExecutionChange = resolve));
+    let onBlsToExecutionChange: (blsToExec: capella.SignedBLSToExecutionChange) => void;
+    const onBlsToExecutionChangePromise = new Promise<capella.SignedBLSToExecutionChange>(
+      (resolve) => (onBlsToExecutionChange = resolve)
+    );
 
     const {netA, netB, controller} = await mockModules({
-      [GossipType.bls_to_execution_change]: async ({serializedData}) => {
-        onBlsToExecutionChange(serializedData);
+      [GossipType.bls_to_execution_change]: async (blsToExec) => {
+        onBlsToExecutionChange(blsToExec);
       },
     });
 
@@ -207,8 +209,8 @@ describe("gossipsub", function () {
     expect(Array.from(netA.getConnectionsByPeer().values()).length).to.equal(1);
     expect(Array.from(netB.getConnectionsByPeer().values()).length).to.equal(1);
 
-    await netA.subscribeGossipCoreTopics();
-    await netB.subscribeGossipCoreTopics();
+    netA.subscribeGossipCoreTopics();
+    netB.subscribeGossipCoreTopics();
 
     // Wait to have a peer connected to a topic
     while (!controller.signal.aborted) {
@@ -223,18 +225,18 @@ describe("gossipsub", function () {
     await netA.gossip.publishBlsToExecutionChange(blsToExec);
 
     const receivedblsToExec = await onBlsToExecutionChangePromise;
-    expect(receivedblsToExec).to.deep.equal(ssz.capella.SignedBLSToExecutionChange.serialize(blsToExec));
+    expect(receivedblsToExec).to.deep.equal(blsToExec);
   });
 
   it("Publish and receive a LightClientOptimisticUpdate", async function () {
-    let onLightClientOptimisticUpdate: (ou: Uint8Array) => void;
-    const onLightClientOptimisticUpdatePromise = new Promise<Uint8Array>(
+    let onLightClientOptimisticUpdate: (ou: allForks.LightClientOptimisticUpdate) => void;
+    const onLightClientOptimisticUpdatePromise = new Promise<allForks.LightClientOptimisticUpdate>(
       (resolve) => (onLightClientOptimisticUpdate = resolve)
     );
 
     const {netA, netB, controller} = await mockModules({
-      [GossipType.light_client_optimistic_update]: async ({serializedData}) => {
-        onLightClientOptimisticUpdate(serializedData);
+      [GossipType.light_client_optimistic_update]: async (lightClientOptimisticUpdate) => {
+        onLightClientOptimisticUpdate(lightClientOptimisticUpdate);
       },
     });
 
@@ -242,8 +244,8 @@ describe("gossipsub", function () {
     expect(Array.from(netA.getConnectionsByPeer().values()).length).to.equal(1);
     expect(Array.from(netB.getConnectionsByPeer().values()).length).to.equal(1);
 
-    await netA.subscribeGossipCoreTopics();
-    await netB.subscribeGossipCoreTopics();
+    netA.subscribeGossipCoreTopics();
+    netB.subscribeGossipCoreTopics();
 
     // Wait to have a peer connected to a topic
     while (!controller.signal.aborted) {
@@ -259,20 +261,18 @@ describe("gossipsub", function () {
     await netA.gossip.publishLightClientOptimisticUpdate(lightClientOptimisticUpdate);
 
     const optimisticUpdate = await onLightClientOptimisticUpdatePromise;
-    expect(optimisticUpdate).to.deep.equal(
-      ssz.capella.LightClientOptimisticUpdate.serialize(lightClientOptimisticUpdate)
-    );
+    expect(optimisticUpdate).to.deep.equal(lightClientOptimisticUpdate);
   });
 
   it("Publish and receive a LightClientFinalityUpdate", async function () {
-    let onLightClientFinalityUpdate: (fu: Uint8Array) => void;
-    const onLightClientFinalityUpdatePromise = new Promise<Uint8Array>(
+    let onLightClientFinalityUpdate: (fu: allForks.LightClientFinalityUpdate) => void;
+    const onLightClientFinalityUpdatePromise = new Promise<allForks.LightClientFinalityUpdate>(
       (resolve) => (onLightClientFinalityUpdate = resolve)
     );
 
     const {netA, netB, controller} = await mockModules({
-      [GossipType.light_client_finality_update]: async ({serializedData}) => {
-        onLightClientFinalityUpdate(serializedData);
+      [GossipType.light_client_finality_update]: async (lightClientFinalityUpdate) => {
+        onLightClientFinalityUpdate(lightClientFinalityUpdate);
       },
     });
 
@@ -280,8 +280,8 @@ describe("gossipsub", function () {
     expect(Array.from(netA.getConnectionsByPeer().values()).length).to.equal(1);
     expect(Array.from(netB.getConnectionsByPeer().values()).length).to.equal(1);
 
-    await netA.subscribeGossipCoreTopics();
-    await netB.subscribeGossipCoreTopics();
+    netA.subscribeGossipCoreTopics();
+    netB.subscribeGossipCoreTopics();
 
     // Wait to have a peer connected to a topic
     while (!controller.signal.aborted) {
@@ -297,6 +297,6 @@ describe("gossipsub", function () {
     await netA.gossip.publishLightClientFinalityUpdate(lightClientFinalityUpdate);
 
     const optimisticUpdate = await onLightClientFinalityUpdatePromise;
-    expect(optimisticUpdate).to.deep.equal(ssz.capella.LightClientFinalityUpdate.serialize(lightClientFinalityUpdate));
+    expect(optimisticUpdate).to.deep.equal(lightClientFinalityUpdate);
   });
 });

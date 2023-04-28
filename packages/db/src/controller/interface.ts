@@ -1,13 +1,13 @@
-import {LevelDbControllerMetrics} from "./metrics.js";
+import {ILevelDbControllerMetrics} from "./metrics.js";
 
-/** Shortcut for Uint8Array based DatabaseController */
-export type Db = DatabaseController<Uint8Array, Uint8Array>;
+/** Shortcut for Uint8Array based IDatabaseController */
+export type Db = IDatabaseController<Uint8Array, Uint8Array>;
 
-export type DatabaseOptions = {
+export interface IDatabaseOptions {
   name: string;
-};
+}
 
-export interface FilterOptions<K> {
+export interface IFilterOptions<K> {
   gt?: K;
   gte?: K;
   lt?: K;
@@ -23,19 +23,19 @@ export type DbReqOpts = {
   bucketId?: string;
 };
 
-export interface KeyValue<K, V> {
+export interface IKeyValue<K, V> {
   key: K;
   value: V;
 }
 
-export interface DatabaseController<K, V> {
+export interface IDatabaseController<K, V> {
   // service start / stop
 
   start(): Promise<void>;
   stop(): Promise<void>;
 
   /** To inject metrics after CLI initialization */
-  setMetrics(metrics: LevelDbControllerMetrics): void;
+  setMetrics(metrics: ILevelDbControllerMetrics): void;
 
   // Core API
 
@@ -45,17 +45,17 @@ export interface DatabaseController<K, V> {
 
   // Batch operations
 
-  batchPut(items: KeyValue<K, V>[], opts?: DbReqOpts): Promise<void>;
+  batchPut(items: IKeyValue<K, V>[], opts?: DbReqOpts): Promise<void>;
   batchDelete(keys: K[], opts?: DbReqOpts): Promise<void>;
 
   // Iterate over entries
 
-  keysStream(opts?: FilterOptions<K>): AsyncIterable<K>;
-  keys(opts?: FilterOptions<K>): Promise<K[]>;
+  keysStream(opts?: IFilterOptions<K>): AsyncIterable<K>;
+  keys(opts?: IFilterOptions<K>): Promise<K[]>;
 
-  valuesStream(opts?: FilterOptions<K>): AsyncIterable<V>;
-  values(opts?: FilterOptions<K>): Promise<V[]>;
+  valuesStream(opts?: IFilterOptions<K>): AsyncIterable<V>;
+  values(opts?: IFilterOptions<K>): Promise<V[]>;
 
-  entriesStream(opts?: FilterOptions<K>): AsyncIterable<KeyValue<K, V>>;
-  entries(opts?: FilterOptions<K>): Promise<KeyValue<K, V>[]>;
+  entriesStream(opts?: IFilterOptions<K>): AsyncIterable<IKeyValue<K, V>>;
+  entries(opts?: IFilterOptions<K>): Promise<IKeyValue<K, V>[]>;
 }

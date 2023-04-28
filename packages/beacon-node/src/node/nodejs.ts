@@ -2,9 +2,9 @@ import {setMaxListeners} from "node:events";
 import {Registry} from "prom-client";
 
 import {PeerId} from "@libp2p/interface-peer-id";
-import {BeaconConfig} from "@lodestar/config";
+import {IBeaconConfig} from "@lodestar/config";
 import {phase0} from "@lodestar/types";
-import {Logger} from "@lodestar/utils";
+import {ILogger} from "@lodestar/utils";
 import {Api, ServerApi} from "@lodestar/api";
 import {BeaconStateAllForks} from "@lodestar/state-transition";
 import {ProcessShutdownCallback} from "@lodestar/validator";
@@ -14,8 +14,7 @@ import {INetwork, Network, getReqRespHandlers} from "../network/index.js";
 import {BeaconSync, IBeaconSync} from "../sync/index.js";
 import {BackfillSync} from "../sync/backfill/index.js";
 import {BeaconChain, IBeaconChain, initBeaconMetrics} from "../chain/index.js";
-import {createMetrics, Metrics, HttpMetricsServer} from "../metrics/index.js";
-import {MonitoringService} from "../monitoring/index.js";
+import {createMetrics, IMetrics, HttpMetricsServer} from "../metrics/index.js";
 import {getApi, BeaconRestApiServer} from "../api/index.js";
 import {initializeExecutionEngine, initializeExecutionBuilder} from "../execution/index.js";
 import {initializeEth1ForBlockProduction} from "../eth1/index.js";
@@ -25,34 +24,33 @@ import {runNodeNotifier} from "./notifier.js";
 
 export * from "./options.js";
 
-export type BeaconNodeModules = {
+export interface IBeaconNodeModules {
   opts: IBeaconNodeOptions;
-  config: BeaconConfig;
+  config: IBeaconConfig;
   db: IBeaconDb;
-  metrics: Metrics | null;
+  metrics: IMetrics | null;
   network: INetwork;
   chain: IBeaconChain;
   api: {[K in keyof Api]: ServerApi<Api[K]>};
   sync: IBeaconSync;
   backfillSync: BackfillSync | null;
   metricsServer?: HttpMetricsServer;
-  monitoring: MonitoringService | null;
   restApi?: BeaconRestApiServer;
   controller?: AbortController;
-};
+}
 
-export type BeaconNodeInitModules = {
+export interface IBeaconNodeInitModules {
   opts: IBeaconNodeOptions;
-  config: BeaconConfig;
+  config: IBeaconConfig;
   db: IBeaconDb;
-  logger: Logger;
+  logger: ILogger;
   processShutdownCallback: ProcessShutdownCallback;
   peerId: PeerId;
   peerStoreDir?: string;
   anchorState: BeaconStateAllForks;
   wsCheckpoint?: phase0.Checkpoint;
   metricsRegistries?: Registry[];
-};
+}
 
 export enum BeaconNodeStatus {
   started = "started",
@@ -66,7 +64,6 @@ enum LoggerModule {
   chain = "chain",
   eth1 = "eth1",
   metrics = "metrics",
-  monitoring = "monitoring",
   network = "network",
   /** validator monitor */
   vmon = "vmon",
@@ -80,11 +77,10 @@ enum LoggerModule {
  */
 export class BeaconNode {
   opts: IBeaconNodeOptions;
-  config: BeaconConfig;
+  config: IBeaconConfig;
   db: IBeaconDb;
-  metrics: Metrics | null;
+  metrics: IMetrics | null;
   metricsServer?: HttpMetricsServer;
-  monitoring: MonitoringService | null;
   network: INetwork;
   chain: IBeaconChain;
   api: {[K in keyof Api]: ServerApi<Api[K]>};
@@ -101,7 +97,6 @@ export class BeaconNode {
     db,
     metrics,
     metricsServer,
-    monitoring,
     network,
     chain,
     api,
@@ -109,12 +104,11 @@ export class BeaconNode {
     sync,
     backfillSync,
     controller,
-  }: BeaconNodeModules) {
+  }: IBeaconNodeModules) {
     this.opts = opts;
     this.config = config;
     this.metrics = metrics;
     this.metricsServer = metricsServer;
-    this.monitoring = monitoring;
     this.db = db;
     this.chain = chain;
     this.api = api;
@@ -142,7 +136,7 @@ export class BeaconNode {
     anchorState,
     wsCheckpoint,
     metricsRegistries = [],
-  }: BeaconNodeInitModules): Promise<T> {
+  }: IBeaconNodeInitModules): Promise<T> {
     const controller = new AbortController();
     // We set infinity to prevent MaxListenersExceededWarning which get logged when listeners > 10
     // Since it is perfectly fine to have listeners > 10
@@ -150,7 +144,7 @@ export class BeaconNode {
     const signal = controller.signal;
 
     // TODO DENEB, where is the best place to do this?
-    if (config.DENEB_FORK_EPOCH < Infinity) {
+    if (config.EIP4844_FORK_EPOCH < Infinity) {
       // TODO DENEB: "c-kzg" is not installed by default, so if the library is not installed this will throw
       // See "Not able to build lodestar from source" https://github.com/ChainSafe/lodestar/issues/4886
       await initCKZG();
@@ -164,11 +158,7 @@ export class BeaconNode {
     await db.pruneHotDb();
 
     let metrics = null;
-    if (
-      opts.metrics.enabled ||
-      // monitoring relies on metrics data
-      opts.monitoring.endpoint
-    ) {
+    if (opts.metrics.enabled) {
       metrics = createMetrics(
         opts.metrics,
         config,
@@ -179,15 +169,6 @@ export class BeaconNode {
       initBeaconMetrics(metrics, anchorState);
       // Since the db is instantiated before this, metrics must be injected manually afterwards
       db.setMetrics(metrics.db);
-    }
-
-    let monitoring = null;
-    if (opts.monitoring.endpoint) {
-      monitoring = new MonitoringService("beacon", opts.monitoring, {
-        register: (metrics as Metrics).register,
-        logger: logger.child({module: LoggerModule.monitoring}),
-      });
-      monitoring.start();
     }
 
     const chain = new BeaconChain(opts.chain, {
@@ -206,7 +187,7 @@ export class BeaconNode {
       }),
       executionEngine: initializeExecutionEngine(opts.executionEngine, {metrics, signal}),
       executionBuilder: opts.executionBuilder.enabled
-        ? initializeExecutionBuilder(opts.executionBuilder, config, metrics)
+        ? initializeExecutionBuilder(opts.executionBuilder, config)
         : undefined,
     });
 
@@ -262,12 +243,11 @@ export class BeaconNode {
       metrics,
     });
 
-    // only start server if metrics are explicitly enabled
-    const metricsServer = opts.metrics.enabled
+    const metricsServer = metrics
       ? new HttpMetricsServer(opts.metrics, {
-          register: (metrics as Metrics).register,
+          register: metrics.register,
           getOtherMetrics: async (): Promise<string> => {
-            return network.metrics();
+            return (await network.discv5()?.metrics()) ?? "";
           },
           logger: logger.child({module: LoggerModule.metrics}),
         })
@@ -294,7 +274,6 @@ export class BeaconNode {
       db,
       metrics,
       metricsServer,
-      monitoring,
       network,
       chain,
       api,
@@ -315,7 +294,6 @@ export class BeaconNode {
       this.backfillSync?.close();
       await this.network.close();
       if (this.metricsServer) await this.metricsServer.stop();
-      if (this.monitoring) this.monitoring.stop();
       if (this.restApi) await this.restApi.close();
 
       await this.chain.persistToDisk();

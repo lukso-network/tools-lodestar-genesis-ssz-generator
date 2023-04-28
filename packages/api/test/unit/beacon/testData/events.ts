@@ -1,5 +1,4 @@
 import {ssz} from "@lodestar/types";
-import {ForkName} from "@lodestar/params";
 import {Api, EventData, EventType} from "../../../../src/beacon/routes/events.js";
 import {GenericServerTestCases} from "../../../utils/genericServerTest.js";
 
@@ -105,8 +104,4 @@ export const eventTestData: EventData = {
     signatureSlot: ssz.Slot.defaultValue(),
   },
   [EventType.lightClientUpdate]: ssz.altair.LightClientUpdate.defaultValue(),
-  [EventType.payloadAttributes]: {
-    version: ForkName.bellatrix,
-    data: ssz.bellatrix.SSEPayloadAttributes.defaultValue(),
-  },
 };

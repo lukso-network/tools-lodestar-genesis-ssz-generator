@@ -1,53 +1,49 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import {EventEmitter} from "node:events";
 import {mkdir, writeFile} from "node:fs/promises";
-import path from "node:path";
-import fs from "node:fs";
+import {join} from "node:path";
 import tmp from "tmp";
 import {fromHexString} from "@chainsafe/ssz";
 import {nodeUtils} from "@lodestar/beacon-node";
-import {createChainForkConfig, ChainForkConfig} from "@lodestar/config";
+import {createIChainForkConfig, IChainForkConfig} from "@lodestar/config";
 import {activePreset} from "@lodestar/params";
 import {BeaconStateAllForks, interopSecretKey} from "@lodestar/state-transition";
 import {generateLodestarBeaconNode} from "./cl_clients/lodestar.js";
 import {
+  BN_P2P_BASE_PORT,
+  BN_REST_BASE_PORT,
   CLIQUE_SEALING_PERIOD,
   EL_ENGINE_BASE_PORT,
+  EL_ETH_BASE_PORT,
+  EL_P2P_BASE_PORT,
+  KEY_MANAGER_BASE_PORT,
   MOCK_ETH1_GENESIS_HASH,
   SHARED_JWT_SECRET,
-  SHARED_VALIDATOR_PASSWORD,
-  SIM_ENV_CHAIN_ID,
-  SIM_ENV_NETWORK_ID,
   SIM_TESTS_SECONDS_PER_SLOT,
 } from "./constants.js";
 import {generateGethNode} from "./el_clients/geth.js";
 import {generateMockNode} from "./el_clients/mock.js";
 import {generateNethermindNode} from "./el_clients/nethermind.js";
-import {EpochClock, MS_IN_SEC} from "./EpochClock.js";
+import {EpochClock} from "./EpochClock.js";
 import {ExternalSignerServer} from "./ExternalSignerServer.js";
 import {
   AtLeast,
   CLClient,
   CLClientGeneratorOptions,
-  CLClientKeys,
   CLNode,
   ELClient,
   ELGeneratorClientOptions,
   ELNode,
   ELStartMode,
-  IRunner,
   NodePair,
   NodePairOptions,
   SimulationInitOptions,
   SimulationOptions,
 } from "./interfaces.js";
+import {ChildProcessRunner} from "./runner/ChildProcessRunner.js";
+import {DockerRunner} from "./runner/DockerRunner.js";
 import {SimulationTracker} from "./SimulationTracker.js";
-import {getEstimatedTTD, makeUniqueArray, regsiterProcessHandler, replaceIpFromUrl} from "./utils/index.js";
-import {generateLighthouseBeaconNode} from "./cl_clients/lighthouse.js";
-import {Runner} from "./runner/index.js";
-import {createKeystores} from "./utils/keys.js";
-import {getGethGenesisBlock} from "./utils/el_genesis.js";
-import {createCLNodePaths, createELNodePaths, getCLNodePaths, getELNodePaths} from "./utils/paths.js";
+import {getEstimatedTTD} from "./utils/index.js";
 
 interface StartOpts {
   runTimeoutMs: number;
@@ -60,19 +56,22 @@ export class SimulationEnvironment {
   readonly clock: EpochClock;
   readonly tracker: SimulationTracker;
   readonly emitter: EventEmitter;
-  readonly runner: IRunner;
+  readonly childProcessRunner: ChildProcessRunner;
+  readonly dockerRunner: DockerRunner;
   readonly externalSigner: ExternalSignerServer;
 
-  readonly forkConfig: ChainForkConfig;
+  readonly forkConfig: IChainForkConfig;
   readonly options: SimulationOptions;
 
   private keysCount = 0;
   private nodePairCount = 0;
   private genesisState?: BeaconStateAllForks;
+  private genesisStatePath: string;
 
-  private constructor(forkConfig: ChainForkConfig, options: SimulationOptions) {
+  private constructor(forkConfig: IChainForkConfig, options: SimulationOptions) {
     this.forkConfig = forkConfig;
     this.options = options;
+    this.genesisStatePath = join(this.options.rootDir, "genesis.ssz");
 
     this.clock = new EpochClock({
       genesisTime: this.options.genesisTime,
@@ -83,7 +82,10 @@ export class SimulationEnvironment {
 
     this.emitter = new EventEmitter();
     this.externalSigner = new ExternalSignerServer([]);
-    this.runner = new Runner({logsDir: this.options.logsDir});
+
+    this.childProcessRunner = new ChildProcessRunner();
+    this.dockerRunner = new DockerRunner(join(this.options.logsDir, "docker_runner.log"));
+
     this.tracker = SimulationTracker.initWithDefaultAssertions({
       nodes: [],
       config: this.forkConfig,
@@ -92,10 +94,10 @@ export class SimulationEnvironment {
     });
   }
 
-  static async initWithDefaults(
+  static initWithDefaults(
     {chainConfig, logsDir, id}: SimulationInitOptions,
     clients: NodePairOptions[]
-  ): Promise<SimulationEnvironment> {
+  ): SimulationEnvironment {
     const secondsPerSlot = chainConfig.SECONDS_PER_SLOT ?? SIM_TESTS_SECONDS_PER_SLOT;
     const genesisTime = Math.floor(Date.now() / 1000) + chainConfig.GENESIS_DELAY * secondsPerSlot;
     const ttd =
@@ -109,12 +111,10 @@ export class SimulationEnvironment {
         additionalSlots: activePreset.SLOTS_PER_EPOCH - 2,
       });
 
-    const forkConfig = createChainForkConfig({
+    const forkConfig = createIChainForkConfig({
       ...chainConfig,
       SECONDS_PER_SLOT: secondsPerSlot,
       TERMINAL_TOTAL_DIFFICULTY: ttd,
-      DEPOSIT_CHAIN_ID: SIM_ENV_CHAIN_ID,
-      DEPOSIT_NETWORK_ID: SIM_ENV_NETWORK_ID,
     });
 
     const env = new SimulationEnvironment(forkConfig, {
@@ -122,11 +122,11 @@ export class SimulationEnvironment {
       id,
       genesisTime,
       controller: new AbortController(),
-      rootDir: path.join(tmp.dirSync({unsafeCleanup: true, tmpdir: "/tmp", template: "sim-XXXXXX"}).name, id),
+      rootDir: join(tmp.dirSync({unsafeCleanup: true, tmpdir: "/tmp", template: "sim-XXXXXX"}).name, id),
     });
 
     for (const client of clients) {
-      env.nodes.push(await env.createNodePair(client));
+      env.nodes.push(env.createNodePair(client));
     }
 
     return env;
@@ -135,7 +135,7 @@ export class SimulationEnvironment {
   async start(opts: StartOpts): Promise<void> {
     const currentTime = Date.now();
     setTimeout(() => {
-      const slots = this.clock.getSlotFor((currentTime + opts.runTimeoutMs) / MS_IN_SEC);
+      const slots = this.clock.getSlotFor(currentTime + opts.runTimeoutMs);
       const epoch = this.clock.getEpochForSlot(slots);
       const slot = this.clock.getSlotIndexInEpoch(slots);
 
@@ -146,7 +146,7 @@ export class SimulationEnvironment {
 
     const msToGenesis = this.clock.msToGenesis();
     const startTimeout = setTimeout(() => {
-      const slots = this.clock.getSlotFor((currentTime + msToGenesis) / MS_IN_SEC);
+      const slots = this.clock.getSlotFor(currentTime + msToGenesis);
       const epoch = this.clock.getEpochForSlot(slots);
       const slot = this.clock.getSlotIndexInEpoch(slots);
 
@@ -157,18 +157,53 @@ export class SimulationEnvironment {
     }, msToGenesis);
 
     try {
-      regsiterProcessHandler(this);
-      if (!fs.existsSync(this.options.rootDir)) {
-        await mkdir(this.options.rootDir);
-      }
+      process.on("unhandledRejection", async (reason, promise) => {
+        console.error("Unhandled Rejection at:", promise, "reason:", reason);
+        await this.stop(1, "Unhandled promise rejection");
+      });
 
-      await this.runner.start();
+      process.on("uncaughtException", async (err) => {
+        console.error("Uncaught exception:", err);
+        await this.stop(1, "Uncaught exception");
+      });
+
+      process.on("SIGTERM", async () => {
+        await this.stop(0, "Terminating");
+      });
+      process.on("SIGINT", async () => {
+        await this.stop(0, "Terminating");
+      });
+
+      await mkdir(this.options.rootDir);
+
+      await this.dockerRunner.start();
       await Promise.all(this.nodes.map((node) => node.el.job.start()));
 
-      await this.initGenesisState();
+      for (let i = 0; i < this.nodes.length; i++) {
+        // Get genesis block hash
+        const el = this.nodes[i].el;
+
+        // If eth1 is mock then genesis hash would be empty
+        const eth1Genesis =
+          el.provider === null ? {hash: MOCK_ETH1_GENESIS_HASH} : await el.provider.getBlockByNumber(0);
+
+        if (!eth1Genesis) {
+          throw new Error(`Eth1 genesis not found for node "${this.nodes[i].id}"`);
+        }
+
+        const genesisState = nodeUtils.initDevState(this.forkConfig, this.keysCount, {
+          genesisTime: this.options.genesisTime,
+          eth1BlockHash: fromHexString(eth1Genesis.hash),
+        }).state;
+
+        this.genesisState = genesisState;
+      }
+
       if (!this.genesisState) {
         throw new Error("The genesis state for CL clients is not defined.");
       }
+
+      await writeFile(this.genesisStatePath, this.genesisState.serialize());
 
       await Promise.all(this.nodes.map((node) => node.cl.job.start()));
 
@@ -208,7 +243,7 @@ export class SimulationEnvironment {
     await Promise.all(this.nodes.map((node) => node.el.job.stop()));
     await Promise.all(this.nodes.map((node) => node.cl.job.stop()));
     await this.externalSigner.stop();
-    await this.runner.stop();
+    await this.dockerRunner.stop();
 
     if (this.tracker.getErrorCount() > 0) {
       this.tracker.reporter.summary();
@@ -218,213 +253,111 @@ export class SimulationEnvironment {
     }
   }
 
-  async createNodePair<C extends CLClient, E extends ELClient>({
+  createNodePair<C extends CLClient, E extends ELClient>({
     el,
     cl,
     keysCount,
     id,
     remote,
     mining,
-  }: NodePairOptions<C, E>): Promise<NodePair> {
+  }: NodePairOptions<C, E>): NodePair {
     if (this.genesisState && keysCount > 0) {
       throw new Error("Genesis state already initialized. Can not add more keys to it.");
     }
-    const interopKeys = Array.from({length: keysCount}, (_, vi) => {
+
+    this.nodePairCount += 1;
+
+    const keys = Array.from({length: keysCount}, (_, vi) => {
       return interopSecretKey(this.keysCount + vi);
     });
     this.keysCount += keysCount;
 
-    const keys: CLClientKeys =
-      interopKeys.length > 0 && remote
-        ? {type: "remote", secretKeys: interopKeys}
-        : interopKeys.length > 0
-        ? {type: "local", secretKeys: interopKeys}
-        : {type: "no-keys"};
-
-    const elType = typeof el === "object" ? el.type : el;
     const clType = typeof cl === "object" ? cl.type : cl;
-
-    const elOptions = typeof el === "object" ? el.options : {};
-    const elNode = await this.createELNode(elType, {...elOptions, id, mining, nodeIndex: this.nodePairCount});
-
     const clOptions = typeof cl === "object" ? cl.options : {};
-    const engineUrls = [
-      // As lodestar is running on host machine, need to connect through local exposed ports
-      clType === CLClient.Lodestar ? replaceIpFromUrl(elNode.engineRpcUrl, "127.0.0.1") : elNode.engineRpcUrl,
-      ...(clOptions.engineUrls || []),
-    ];
-
-    const clNode = await this.createCLNode(clType, {
+    const clNode = this.createCLNode(clType, {
       ...clOptions,
       id,
-      keys,
+      keys:
+        keys.length > 0 && remote
+          ? {type: "remote", secretKeys: keys}
+          : keys.length > 0
+          ? {type: "local", secretKeys: keys}
+          : {type: "no-keys"},
       engineMock: typeof el === "string" ? el === ELClient.Mock : el.type === ELClient.Mock,
-      engineUrls,
-      nodeIndex: this.nodePairCount,
     });
 
-    this.nodePairCount += 1;
+    const elType = typeof el === "object" ? el.type : el;
+    const elOptions = typeof el === "object" ? el.options : {};
+    const elNode = this.createELNode(elType, {...elOptions, id, mining});
 
     return {id, el: elNode, cl: clNode};
   }
 
-  private async createCLNode<C extends CLClient>(
+  private createCLNode<C extends CLClient>(
     client: C,
-    options: AtLeast<CLClientGeneratorOptions<C>, "keys" | "id" | "nodeIndex">
-  ): Promise<CLNode> {
+    options?: AtLeast<CLClientGeneratorOptions<C>, "keys" | "id">
+  ): CLNode {
     const clId = `${options?.id}-cl-${client}`;
-
-    const clPaths = await createCLNodePaths(
-      getCLNodePaths({
-        root: this.options.rootDir,
-        id: options.id,
-        client,
-        logsDir: this.options.logsDir,
-      })
-    );
-    await createKeystores(clPaths, options.keys);
-    await writeFile(clPaths.jwtsecretFilePath, SHARED_JWT_SECRET);
-    await writeFile(clPaths.keystoresSecretFilePath, SHARED_VALIDATOR_PASSWORD);
-    if (this.genesisState) {
-      await writeFile(clPaths.genesisFilePath, this.genesisState.serialize());
-    }
-
-    // We have to wite the geneiss state but can't do that without starting up
-    // atleast one EL node and getting ETH_HASH, so will do in startup
-    //await writeFile(clPaths.genesisFilePath, this.genesisState);
-
-    const opts: CLClientGeneratorOptions = {
-      id: clId,
-      config: this.forkConfig,
-      paths: clPaths,
-      nodeIndex: options.nodeIndex,
-      keys: options?.keys ?? {type: "no-keys"},
-      genesisTime: this.options.genesisTime,
-      engineMock: options?.engineMock ?? false,
-      clientOptions: options?.clientOptions ?? {},
-      address: "127.0.0.1",
-      engineUrls: options?.engineUrls ?? [],
-    };
 
     switch (client) {
       case CLClient.Lodestar: {
-        return generateLodestarBeaconNode(
-          {
-            ...opts,
-            address: "127.0.0.1",
-            engineUrls: options?.engineUrls
-              ? makeUniqueArray([
-                  `http://127.0.0.1:${EL_ENGINE_BASE_PORT + this.nodePairCount + 1}`,
-                  ...options.engineUrls,
-                ])
-              : [`http://127.0.0.1:${EL_ENGINE_BASE_PORT + this.nodePairCount + 1}`],
-          },
-          this.runner
-        );
-      }
-      case CLClient.Lighthouse: {
-        return generateLighthouseBeaconNode(
-          {
-            ...opts,
-            address: this.runner.getNextIp(),
-            engineUrls: options?.engineUrls
-              ? makeUniqueArray([...options.engineUrls])
-              : [`http://127.0.0.1:${EL_ENGINE_BASE_PORT + this.nodePairCount + 1}`],
-          },
-          this.runner
-        );
+        const opts: CLClientGeneratorOptions = {
+          id: clId,
+          dataDir: join(this.options.rootDir, clId),
+          logFilePath: join(this.options.logsDir, `${clId}.log`),
+          genesisStateFilePath: this.genesisStatePath,
+          restPort: BN_REST_BASE_PORT + this.nodePairCount + 1,
+          port: BN_P2P_BASE_PORT + this.nodePairCount + 1,
+          keyManagerPort: KEY_MANAGER_BASE_PORT + this.nodePairCount + 1,
+          config: this.forkConfig,
+          address: "127.0.0.1",
+          keys: options?.keys ?? {type: "no-keys"},
+          genesisTime: this.options.genesisTime,
+          engineUrls: options?.engineUrls
+            ? [`http://127.0.0.1:${EL_ENGINE_BASE_PORT + this.nodePairCount + 1}`, ...options.engineUrls]
+            : [`http://127.0.0.1:${EL_ENGINE_BASE_PORT + this.nodePairCount + 1}`],
+          engineMock: options?.engineMock ?? false,
+          jwtSecretHex: options?.jwtSecretHex ?? SHARED_JWT_SECRET,
+          clientOptions: options?.clientOptions ?? {},
+        };
+        return generateLodestarBeaconNode(opts, this.childProcessRunner);
       }
       default:
         throw new Error(`CL Client "${client}" not supported`);
     }
   }
 
-  private async createELNode<E extends ELClient>(
-    client: E,
-    options: AtLeast<ELGeneratorClientOptions<E>, "id" | "nodeIndex">
-  ): Promise<ELNode> {
+  private createELNode<E extends ELClient>(client: E, options: AtLeast<ELGeneratorClientOptions<E>, "id">): ELNode {
     const elId = `${options.id}-el-${client}`;
-
-    const elPaths = await createELNodePaths(
-      getELNodePaths({
-        root: this.options.rootDir,
-        id: options.id,
-        client,
-        logsDir: this.options.logsDir,
-      })
-    );
-    await writeFile(elPaths.jwtsecretFilePath, SHARED_JWT_SECRET);
-
-    const mode =
-      options?.mode ?? (this.forkConfig.BELLATRIX_FORK_EPOCH > 0 ? ELStartMode.PreMerge : ELStartMode.PostMerge);
-
-    await writeFile(
-      elPaths.genesisFilePath,
-      JSON.stringify(
-        getGethGenesisBlock(mode, {
-          ttd: options?.ttd ?? this.forkConfig.TERMINAL_TOTAL_DIFFICULTY,
-          cliqueSealingPeriod: options?.cliqueSealingPeriod ?? CLIQUE_SEALING_PERIOD,
-          clientOptions: [],
-        })
-      )
-    );
 
     const opts: ELGeneratorClientOptions<E> = {
       id: elId,
-      paths: elPaths,
-      nodeIndex: options.nodeIndex,
       mode: options?.mode ?? (this.forkConfig.BELLATRIX_FORK_EPOCH > 0 ? ELStartMode.PreMerge : ELStartMode.PostMerge),
       ttd: options?.ttd ?? this.forkConfig.TERMINAL_TOTAL_DIFFICULTY,
       cliqueSealingPeriod: options?.cliqueSealingPeriod ?? CLIQUE_SEALING_PERIOD,
-      address: this.runner.getNextIp(),
+      logFilePath: options?.logFilePath ?? join(this.options.logsDir, `${elId}.log`),
+      dataDir: options?.dataDir ?? join(this.options.rootDir, elId),
+      jwtSecretHex: options?.jwtSecretHex ?? SHARED_JWT_SECRET,
+      enginePort: options?.enginePort ?? EL_ENGINE_BASE_PORT + this.nodePairCount + 1,
+      ethPort: options?.ethPort ?? EL_ETH_BASE_PORT + this.nodePairCount + 1,
+      port: options?.port ?? EL_P2P_BASE_PORT + this.nodePairCount + 1,
+      address: this.dockerRunner.getNextIp(),
       mining: options?.mining ?? false,
       clientOptions: options.clientOptions ?? [],
     };
 
     switch (client) {
       case ELClient.Mock: {
-        return generateMockNode(opts as ELGeneratorClientOptions<ELClient.Mock>, this.runner);
+        return generateMockNode(opts as ELGeneratorClientOptions<ELClient.Mock>, this.childProcessRunner);
       }
       case ELClient.Geth: {
-        return generateGethNode(opts as ELGeneratorClientOptions<ELClient.Geth>, this.runner);
+        return generateGethNode(opts as ELGeneratorClientOptions<ELClient.Geth>, this.dockerRunner);
       }
       case ELClient.Nethermind: {
-        return generateNethermindNode(opts as ELGeneratorClientOptions<ELClient.Nethermind>, this.runner);
+        return generateNethermindNode(opts as ELGeneratorClientOptions<ELClient.Nethermind>, this.dockerRunner);
       }
       default:
         throw new Error(`EL Client "${client}" not supported`);
-    }
-  }
-
-  private async initGenesisState(): Promise<void> {
-    for (let i = 0; i < this.nodes.length; i++) {
-      // Get genesis block hash
-      const el = this.nodes[i].el;
-
-      // If eth1 is mock then genesis hash would be empty
-      const eth1Genesis = el.provider === null ? {hash: MOCK_ETH1_GENESIS_HASH} : await el.provider.getBlockByNumber(0);
-
-      if (!eth1Genesis) {
-        throw new Error(`Eth1 genesis not found for node "${this.nodes[i].id}"`);
-      }
-
-      const genesisState = nodeUtils.initDevState(this.forkConfig, this.keysCount, {
-        genesisTime: this.options.genesisTime,
-        eth1BlockHash: fromHexString(eth1Genesis.hash),
-      }).state;
-
-      this.genesisState = genesisState;
-
-      // Write the genesis state for all nodes
-      for (const node of this.nodes) {
-        const {genesisFilePath} = getCLNodePaths({
-          root: this.options.rootDir,
-          id: node.id,
-          logsDir: this.options.logsDir,
-          client: node.cl.client,
-        });
-        await writeFile(genesisFilePath, this.genesisState.serialize());
-      }
     }
   }
 }

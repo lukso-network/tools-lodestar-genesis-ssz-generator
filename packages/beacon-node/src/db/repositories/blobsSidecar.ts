@@ -1,4 +1,4 @@
-import {ChainForkConfig} from "@lodestar/config";
+import {IChainForkConfig} from "@lodestar/config";
 import {Bucket, Db, Repository} from "@lodestar/db";
 import {deneb, ssz} from "@lodestar/types";
 
@@ -8,7 +8,7 @@ import {deneb, ssz} from "@lodestar/types";
  * Used to store unfinalized BlobsSidecar
  */
 export class BlobsSidecarRepository extends Repository<Uint8Array, deneb.BlobsSidecar> {
-  constructor(config: ChainForkConfig, db: Db) {
+  constructor(config: IChainForkConfig, db: Db) {
     super(config, db, Bucket.allForks_blobsSidecar, ssz.deneb.BlobsSidecar);
   }
 

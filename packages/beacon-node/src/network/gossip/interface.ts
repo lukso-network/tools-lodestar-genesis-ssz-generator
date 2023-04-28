@@ -4,9 +4,9 @@ import {Message, TopicValidatorResult} from "@libp2p/interface-pubsub";
 import StrictEventEmitter from "strict-event-emitter-types";
 import {PeerIdStr} from "@chainsafe/libp2p-gossipsub/types";
 import {ForkName} from "@lodestar/params";
-import {allForks, altair, capella, deneb, phase0, Slot} from "@lodestar/types";
-import {BeaconConfig} from "@lodestar/config";
-import {Logger} from "@lodestar/utils";
+import {allForks, altair, capella, deneb, phase0} from "@lodestar/types";
+import {IBeaconConfig} from "@lodestar/config";
+import {ILogger} from "@lodestar/utils";
 import {IBeaconChain} from "../../chain/index.js";
 import {NetworkEvent} from "../events.js";
 import {JobItemQueue} from "../../util/queue/index.js";
@@ -65,10 +65,6 @@ export type GossipTopicMap = {
  */
 export type GossipTopic = GossipTopicMap[keyof GossipTopicMap];
 
-export type SSZTypeOfGossipTopic<T extends GossipTopic> = T extends {type: infer K extends GossipType}
-  ? GossipTypeMap[K]
-  : never;
-
 export type GossipTypeMap = {
   [GossipType.beacon_block]: allForks.SignedBeaconBlock;
   [GossipType.beacon_block_and_blobs_sidecar]: deneb.SignedBeaconBlockAndBlobsSidecar;
@@ -111,35 +107,20 @@ export type GossipFnByType = {
 
 export type GossipFn = GossipFnByType[keyof GossipFnByType];
 
-export type GossipEvents = {
+export interface IGossipEvents {
   [topicStr: string]: GossipFn;
   [NetworkEvent.gossipHeartbeat]: () => void;
   [NetworkEvent.gossipStart]: () => void;
   [NetworkEvent.gossipStop]: () => void;
-};
-export type GossipEventEmitter = StrictEventEmitter<EventEmitter, GossipEvents>;
+}
+export type GossipEventEmitter = StrictEventEmitter<EventEmitter, IGossipEvents>;
 
-export type GossipModules = {
-  config: BeaconConfig;
+export interface IGossipModules {
+  config: IBeaconConfig;
   libp2p: Libp2p;
-  logger: Logger;
+  logger: ILogger;
   chain: IBeaconChain;
-};
-
-export type GossipBeaconNode = {
-  publishBeaconBlock(signedBlock: allForks.SignedBeaconBlock): Promise<void>;
-  publishSignedBeaconBlockAndBlobsSidecar(item: deneb.SignedBeaconBlockAndBlobsSidecar): Promise<void>;
-  publishBeaconAggregateAndProof(aggregateAndProof: phase0.SignedAggregateAndProof): Promise<number>;
-  publishBeaconAttestation(attestation: phase0.Attestation, subnet: number): Promise<number>;
-  publishVoluntaryExit(voluntaryExit: phase0.SignedVoluntaryExit): Promise<void>;
-  publishBlsToExecutionChange(blsToExecutionChange: capella.SignedBLSToExecutionChange): Promise<void>;
-  publishProposerSlashing(proposerSlashing: phase0.ProposerSlashing): Promise<void>;
-  publishAttesterSlashing(attesterSlashing: phase0.AttesterSlashing): Promise<void>;
-  publishSyncCommitteeSignature(signature: altair.SyncCommitteeMessage, subnet: number): Promise<void>;
-  publishContributionAndProof(contributionAndProof: altair.SignedContributionAndProof): Promise<void>;
-  publishLightClientFinalityUpdate(lightClientFinalityUpdate: allForks.LightClientFinalityUpdate): Promise<void>;
-  publishLightClientOptimisticUpdate(lightClientOptimisitcUpdate: allForks.LightClientOptimisticUpdate): Promise<void>;
-};
+}
 
 /**
  * Contains various methods for validation of incoming gossip topic data.
@@ -156,8 +137,7 @@ export type GossipValidatorFn = (
   topic: GossipTopic,
   msg: Message,
   propagationSource: PeerIdStr,
-  seenTimestampSec: number,
-  msgSlot?: Slot
+  seenTimestampSec: number
 ) => Promise<TopicValidatorResult>;
 
 export type ValidatorFnsByType = {[K in GossipType]: GossipValidatorFn};
@@ -166,21 +146,15 @@ export type GossipJobQueues = {
   [K in GossipType]: JobItemQueue<Parameters<GossipValidatorFn>, ResolvedType<GossipValidatorFn>>;
 };
 
-export type GossipData = {
-  serializedData: Uint8Array;
-  msgSlot?: Slot;
-};
-
 export type GossipHandlerFn = (
-  gossipData: GossipData,
+  object: GossipTypeMap[GossipType],
   topic: GossipTopicMap[GossipType],
   peerIdStr: string,
   seenTimestampSec: number
 ) => Promise<void>;
-
 export type GossipHandlers = {
   [K in GossipType]: (
-    gossipData: GossipData,
+    object: GossipTypeMap[K],
     topic: GossipTopicMap[K],
     peerIdStr: string,
     seenTimestampSec: number

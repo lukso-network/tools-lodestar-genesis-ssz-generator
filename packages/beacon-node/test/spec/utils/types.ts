@@ -1,5 +1,5 @@
 import {ForkName} from "@lodestar/params";
-import {SpecTestOptions} from "@lodestar/spec-test-util";
+import {ISpecTestOptions} from "@lodestar/spec-test-util";
 
 export enum RunnerType {
   custom,
@@ -12,7 +12,7 @@ export type TestRunnerFn<TestCase extends {meta?: any}, Result> = (
   testSuite: string
 ) => {
   testFunction: (testCase: TestCase, directoryName: string) => Result | Promise<Result>;
-  options: Partial<SpecTestOptions<TestCase, Result>>;
+  options: Partial<ISpecTestOptions<TestCase, Result>>;
 };
 
 export type TestRunnerCustom = (

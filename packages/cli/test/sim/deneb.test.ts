@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import path from "node:path";
+import {join} from "node:path";
 import {activePreset} from "@lodestar/params";
 import {toHexString} from "@lodestar/utils";
 import {ApiError} from "@lodestar/api";
@@ -35,10 +35,10 @@ const ttd = getEstimatedTTD({
   additionalSlots: additionalSlotsForTTD,
 });
 
-const env = await SimulationEnvironment.initWithDefaults(
+const env = SimulationEnvironment.initWithDefaults(
   {
     id: "multi-fork",
-    logsDir: path.join(logFilesDir, "multi-fork"),
+    logsDir: join(logFilesDir, "multi-fork"),
     chainConfig: {
       ALTAIR_FORK_EPOCH: altairForkEpoch,
       BELLATRIX_FORK_EPOCH: bellatrixForkEpoch,
@@ -73,7 +73,7 @@ await waitForSlot(env.clock.getLastSlotOfEpoch(bellatrixForkEpoch) + activePrese
 // ========================================================
 const headForRangeSync = await env.nodes[0].cl.api.beacon.getBlockHeader("head");
 ApiError.assert(headForRangeSync);
-const rangeSync = await env.createNodePair({
+const rangeSync = env.createNodePair({
   id: "range-sync-node",
   cl: CLClient.Lodestar,
   el: ELClient.Geth,
@@ -85,7 +85,7 @@ const rangeSync = await env.createNodePair({
 const res = await env.nodes[0].cl.api.beacon.getStateFinalityCheckpoints("head");
 ApiError.assert(res);
 const headForCheckpointSync = res.response.data.finalized;
-const checkpointSync = await env.createNodePair({
+const checkpointSync = env.createNodePair({
   id: "checkpoint-sync-node",
   cl: {
     type: CLClient.Lodestar,

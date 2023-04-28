@@ -1,6 +1,5 @@
-import type {FastifyInstance} from "fastify";
 import {mapValues} from "@lodestar/utils";
-import {ChainForkConfig} from "@lodestar/config";
+import {IChainForkConfig} from "@lodestar/config";
 import {ReqGeneric, TypeJson, Resolves, RouteGroupDefinition} from "../types.js";
 import {getFastifySchema} from "../schema.js";
 import {toColonNotationPath} from "../urlFormat.js";
@@ -23,7 +22,7 @@ export function getGenericJsonServer<
   ReqTypes extends {[K in keyof Api]: ReqGeneric}
 >(
   {routesData, getReqSerializers, getReturnTypes}: RouteGroupDefinition<Api, ReqTypes>,
-  config: ChainForkConfig,
+  config: IChainForkConfig,
   api: Api
 ): ServerRoutes<Api, ReqTypes> {
   const reqSerializers = getReqSerializers(config);
@@ -40,8 +39,8 @@ export function getGenericJsonServer<
       id: routeId as string,
       schema: routeSerdes.schema && getFastifySchema(routeSerdes.schema),
 
-      handler: async function handler(this: FastifyInstance, req, resp): Promise<unknown | void> {
-        const args: any[] = routeSerdes.parseReq(req as ReqGeneric as ReqTypes[keyof Api]);
+      handler: async function handler(req: ReqGeneric, resp): Promise<unknown | void> {
+        const args: any[] = routeSerdes.parseReq(req as ReqTypes[keyof Api]);
         const data = (await api[routeId](...args)) as Resolves<Api[keyof Api]>;
 
         if (routeDef.statusOk !== undefined) {

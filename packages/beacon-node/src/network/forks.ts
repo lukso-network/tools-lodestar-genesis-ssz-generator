@@ -1,5 +1,5 @@
 import {ForkName} from "@lodestar/params";
-import {ChainForkConfig, ForkInfo} from "@lodestar/config";
+import {IChainForkConfig, IForkInfo} from "@lodestar/config";
 import {Epoch} from "@lodestar/types";
 
 /**
@@ -33,7 +33,7 @@ export const FORK_EPOCH_LOOKAHEAD = 2;
  * Return the list of `ForkName`s meant to be active at `epoch`
  * @see FORK_EPOCH_LOOKAHEAD for details on when forks are considered 'active'
  */
-export function getActiveForks(config: ChainForkConfig, epoch: Epoch): ForkName[] {
+export function getActiveForks(config: IChainForkConfig, epoch: Epoch): ForkName[] {
   const activeForks: ForkName[] = [];
   const forks = config.forksAscendingEpochOrder;
 
@@ -58,9 +58,9 @@ export function getActiveForks(config: ChainForkConfig, epoch: Epoch): ForkName[
  * Return the currentFork and nextFork given a fork schedule and `epoch`
  */
 export function getCurrentAndNextFork(
-  config: ChainForkConfig,
+  config: IChainForkConfig,
   epoch: Epoch
-): {currentFork: ForkInfo; nextFork: ForkInfo | undefined} {
+): {currentFork: IForkInfo; nextFork: IForkInfo | undefined} {
   if (epoch < 0) {
     epoch = 0;
   }

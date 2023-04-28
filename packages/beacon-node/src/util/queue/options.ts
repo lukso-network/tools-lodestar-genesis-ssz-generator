@@ -18,14 +18,13 @@ export type JobQueueOpts = {
   noYieldIfOneItem?: boolean;
 };
 
-export type QueueMetrics = {
+export interface IQueueMetrics {
   length: IGauge;
   droppedJobs: IGauge;
   /** Compute async utilization rate with `rate(metrics_name[1m])` */
   jobTime: IHistogram;
   jobWaitTime: IHistogram;
-  concurrency: IGauge;
-};
+}
 
 export const defaultQueueOpts: Required<
   Pick<JobQueueOpts, "maxConcurrency" | "yieldEveryMs" | "type" | "noYieldIfOneItem">

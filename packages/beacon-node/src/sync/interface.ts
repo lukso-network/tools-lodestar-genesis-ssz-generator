@@ -1,11 +1,11 @@
-import {Logger} from "@lodestar/utils";
+import {ILogger} from "@lodestar/utils";
 import {RootHex, Slot, phase0} from "@lodestar/types";
-import {BeaconConfig} from "@lodestar/config";
+import {IBeaconConfig} from "@lodestar/config";
 import {routes} from "@lodestar/api";
 import {BlockInput} from "../chain/blocks/types.js";
 import {INetwork} from "../network/index.js";
 import {IBeaconChain} from "../chain/index.js";
-import {Metrics} from "../metrics/index.js";
+import {IMetrics} from "../metrics/index.js";
 import {IBeaconDb} from "../db/index.js";
 import {SyncChainDebugState} from "./range/chain.js";
 export {SyncChainDebugState};
@@ -40,17 +40,21 @@ export const syncStateMetric: {[K in SyncState]: number} = {
   [SyncState.Synced]: 3,
 };
 
-export type SlotRange = {
+export interface ISyncModule {
+  getHighestBlock(): Slot;
+}
+
+export interface ISlotRange {
   start: Slot;
   end: Slot;
-};
+}
 
-export interface SyncModules {
-  config: BeaconConfig;
+export interface ISyncModules {
+  config: IBeaconConfig;
   network: INetwork;
   db: IBeaconDb;
-  metrics: Metrics | null;
-  logger: Logger;
+  metrics: IMetrics | null;
+  logger: ILogger;
   chain: IBeaconChain;
   wsCheckpoint?: phase0.Checkpoint;
 }

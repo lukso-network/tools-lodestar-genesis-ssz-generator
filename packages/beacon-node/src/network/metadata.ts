@@ -1,8 +1,8 @@
 import {BitArray, toHexString} from "@chainsafe/ssz";
 import {ForkName} from "@lodestar/params";
 import {altair, Epoch, phase0, ssz} from "@lodestar/types";
-import {BeaconConfig} from "@lodestar/config";
-import {Logger} from "@lodestar/utils";
+import {IBeaconConfig} from "@lodestar/config";
+import {ILogger} from "@lodestar/utils";
 import {IBeaconChain} from "../chain/index.js";
 import {FAR_FUTURE_EPOCH} from "../constants/index.js";
 import {getCurrentAndNextFork} from "./forks.js";
@@ -18,15 +18,15 @@ export enum SubnetType {
   syncnets = "syncnets",
 }
 
-export type MetadataOpts = {
+export interface IMetadataOpts {
   metadata?: altair.Metadata;
-};
+}
 
-export type MetadataModules = {
-  config: BeaconConfig;
+export interface IMetadataModules {
+  config: IBeaconConfig;
   chain: IBeaconChain;
-  logger: Logger;
-};
+  logger: ILogger;
+}
 
 /**
  * Implementation of Ethereum Consensus p2p MetaData.
@@ -35,12 +35,12 @@ export type MetadataModules = {
  */
 export class MetadataController {
   private setEnrValue?: (key: string, value: Uint8Array) => Promise<void>;
-  private config: BeaconConfig;
+  private config: IBeaconConfig;
   private chain: IBeaconChain;
   private _metadata: altair.Metadata;
-  private logger: Logger;
+  private logger: ILogger;
 
-  constructor(opts: MetadataOpts, modules: MetadataModules) {
+  constructor(opts: IMetadataOpts, modules: IMetadataModules) {
     this.config = modules.config;
     this.chain = modules.chain;
     this.logger = modules.logger;
@@ -116,7 +116,7 @@ export class MetadataController {
   }
 }
 
-export function getENRForkID(config: BeaconConfig, clockEpoch: Epoch): phase0.ENRForkID {
+export function getENRForkID(config: IBeaconConfig, clockEpoch: Epoch): phase0.ENRForkID {
   const {currentFork, nextFork} = getCurrentAndNextFork(config, clockEpoch);
 
   return {

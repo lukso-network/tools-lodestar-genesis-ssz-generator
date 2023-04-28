@@ -1,5 +1,5 @@
 import winston from "winston";
-import {createWinstonLogger, Logger, LogLevel, TimestampFormat} from "@lodestar/utils";
+import {createWinstonLogger, ILogger, LogLevel, TimestampFormat} from "@lodestar/utils";
 export {LogLevel};
 
 export type TestLoggerOpts = {
@@ -16,7 +16,7 @@ export type TestLoggerOpts = {
  * VERBOSE=1 mocha .ts
  * ```
  */
-export function testLogger(module?: string, opts?: TestLoggerOpts): Logger {
+export function testLogger(module?: string, opts?: TestLoggerOpts): ILogger {
   const transports: winston.transport[] = [
     new winston.transports.Console({level: getLogLevelFromEnvs() || opts?.logLevel || LogLevel.error}),
   ];

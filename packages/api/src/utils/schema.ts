@@ -56,9 +56,9 @@ function getJsonSchemaItem(schema: Schema): JsonSchema {
       return {type: "array", items: {type: "string"}};
 
     case Schema.UintOrStringRequired:
-      return {anyOf: [{type: "string"}, {type: "integer"}]};
+      return {type: ["string", "integer"]};
     case Schema.UintOrStringArray:
-      return {type: "array", items: {anyOf: [{type: "string"}, {type: "integer"}]}};
+      return {type: "array", items: {type: ["string", "integer"]}};
 
     case Schema.Object:
       return {type: "object"};

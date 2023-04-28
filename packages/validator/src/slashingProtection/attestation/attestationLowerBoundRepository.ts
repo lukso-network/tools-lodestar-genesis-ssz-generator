@@ -1,5 +1,5 @@
 import {BLSPubkey, Epoch, ssz} from "@lodestar/types";
-import {Bucket, encodeKey, DatabaseApiOptions} from "@lodestar/db";
+import {Bucket, encodeKey, IDatabaseApiOptions} from "@lodestar/db";
 import {ContainerType, Type} from "@chainsafe/ssz";
 import {LodestarValidatorDatabaseController} from "../../types.js";
 
@@ -18,7 +18,7 @@ export class AttestationLowerBoundRepository {
   protected db: LodestarValidatorDatabaseController;
   protected bucket = Bucket.phase0_slashingProtectionAttestationLowerBound;
 
-  constructor(opts: DatabaseApiOptions) {
+  constructor(opts: IDatabaseApiOptions) {
     this.db = opts.controller;
     this.type = new ContainerType({
       minSourceEpoch: ssz.Epoch,

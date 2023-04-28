@@ -4,14 +4,9 @@ import type {PublicKey} from "@chainsafe/bls/types";
 import {
   CachedBeaconStateAllForks,
   computeSigningRoot,
-  createSingleSignatureSetFromComponents,
   ISignatureSet,
+  SignatureSetType,
 } from "@lodestar/state-transition";
-
-export function getSelectionProofSigningRoot(state: CachedBeaconStateAllForks, slot: Slot): Uint8Array {
-  const selectionProofDomain = state.config.getDomain(state.slot, DOMAIN_SELECTION_PROOF, slot);
-  return computeSigningRoot(ssz.Slot, slot, selectionProofDomain);
-}
 
 export function getSelectionProofSignatureSet(
   state: CachedBeaconStateAllForks,
@@ -19,9 +14,12 @@ export function getSelectionProofSignatureSet(
   aggregator: PublicKey,
   aggregateAndProof: phase0.SignedAggregateAndProof
 ): ISignatureSet {
-  return createSingleSignatureSetFromComponents(
-    aggregator,
-    getSelectionProofSigningRoot(state, slot),
-    aggregateAndProof.message.selectionProof
-  );
+  const selectionProofDomain = state.config.getDomain(state.slot, DOMAIN_SELECTION_PROOF, slot);
+
+  return {
+    type: SignatureSetType.single,
+    pubkey: aggregator,
+    signingRoot: computeSigningRoot(ssz.Slot, slot, selectionProofDomain),
+    signature: aggregateAndProof.message.selectionProof,
+  };
 }

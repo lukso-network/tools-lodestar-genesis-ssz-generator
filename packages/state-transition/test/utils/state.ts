@@ -9,7 +9,7 @@ import {
 import {phase0, ssz} from "@lodestar/types";
 import {config} from "@lodestar/config/default";
 
-import {createBeaconConfig, ChainForkConfig} from "@lodestar/config";
+import {createIBeaconConfig, IChainForkConfig} from "@lodestar/config";
 import {ZERO_HASH} from "../../src/constants/index.js";
 import {newZeroedBigIntArray} from "../../src/util/index.js";
 
@@ -85,12 +85,12 @@ export function generateState(opts?: TestBeaconState): BeaconStatePhase0 {
 }
 
 export function generateCachedState(
-  config: ChainForkConfig = minimalConfig,
+  config: IChainForkConfig = minimalConfig,
   opts: TestBeaconState = {}
 ): CachedBeaconStateAllForks {
   const state = generateState(opts);
   return createCachedBeaconState(state, {
-    config: createBeaconConfig(config, state.genesisValidatorsRoot),
+    config: createIBeaconConfig(config, state.genesisValidatorsRoot),
     // This is a test state, there's no need to have a global shared cache of keys
     pubkey2index: new PubkeyIndexMap(),
     index2pubkey: [],
@@ -99,13 +99,13 @@ export function generateCachedState(
 
 export function createCachedBeaconStateTest<T extends BeaconStateAllForks>(
   state: T,
-  configCustom: ChainForkConfig = config,
+  configCustom: IChainForkConfig = config,
   opts?: EpochContextOpts
 ): T & BeaconStateCache {
   return createCachedBeaconState<T>(
     state,
     {
-      config: createBeaconConfig(configCustom, state.genesisValidatorsRoot),
+      config: createIBeaconConfig(configCustom, state.genesisValidatorsRoot),
       // This is a test state, there's no need to have a global shared cache of keys
       pubkey2index: new PubkeyIndexMap(),
       index2pubkey: [],

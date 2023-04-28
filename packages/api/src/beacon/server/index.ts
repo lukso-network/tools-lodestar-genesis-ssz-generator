@@ -1,4 +1,4 @@
-import {ChainForkConfig} from "@lodestar/config";
+import {IChainForkConfig} from "@lodestar/config";
 import {Api} from "../routes/index.js";
 import {ServerInstance, ServerRoute, RouteConfig, registerRoute} from "../../utils/server/index.js";
 
@@ -18,7 +18,7 @@ export {RouteConfig};
 
 export function registerRoutes(
   server: ServerInstance,
-  config: ChainForkConfig,
+  config: IChainForkConfig,
   api: {[K in keyof Api]: ServerApi<Api[K]>},
   enabledNamespaces: (keyof Api)[]
 ): void {
