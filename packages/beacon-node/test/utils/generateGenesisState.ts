@@ -22,7 +22,7 @@ const luksoDevnet3030ChainConfig: IChainConfig = chainConfigFromJson(readBeaconP
 
 type QUANTITY = string;
 
-const bellatrixGenesisBlockStateRoot = "0xfa8d067131287dc10abf80f77654261c41e053487bebc465b6baf884503b951f";
+const bellatrixGenesisBlockStateRoot = "0x3e6dbade337e3d23e3ca780fa839ef273d78bde6a478127fd3cc4086d1077c4e";
 const genesisBlockHash = process.argv[2];
 
 
