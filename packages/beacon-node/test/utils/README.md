@@ -1,15 +1,28 @@
-# Beacon genesis state generator (SSZ Generator)
+# LUKSO `genesis.szz` state generator
 
-## Build
-1. Clone repository
-2. Checkout `spike/pos-from-the-start` git branch
-3. Run `yarn` in project root directory
-4. Run `yarn build` in project root directory
+## Installation
+
+```bash
+# Clone the repo
+$ git clone https://github.com/lukso-network/tools-lodestar-genesis-szz-generator.git
+
+# Change into created folder
+$ cd tools-lodestar-genesis-szz-generator
+
+# Change to the right branch
+$ git checkout spike/pos-from-the-start
+
+# Install dependencies and build
+$ yarn install
+...
+$ yarn build
+```
 
 ## Generate the genesis.szz
 1. Go to `cd packages/beacon-node`
-2. Copy the LUKSO Mainnet [network config files](https://github.com/lukso-network/network-configs/tree/main/mainnet/shared) (`config.yaml`, `genesis.json` and `deposit_data.json`) to the `packages/beacon-node/test/utils/fixtures` directory
-3. Generate the `genesis.json` genesis block hash via [https://github.com/mxmar/eth1genesis](https://github.com/mxmar/eth1genesis/releases/tag/v1.0.0), or use the following pregenerated ones:
+2. Generate the `deposit_data.json` via [https://github.com/lukso-network/network-genesis-deposit-contract](https://github.com/lukso-network/network-genesis-deposit-contract#fetching-all-the-deposit-data#fetching-all-the-deposit-data), or use the pregenerated one from the `packages/beacon-node/test/utils/fixtures` folder
+2. Copy the LUKSO Mainnet [network config files](https://github.com/lukso-network/network-configs/tree/main/mainnet/shared) (`config.yaml`, `genesis.json`) and the `deposit_data.json` to the `packages/beacon-node/test/utils/fixtures` folder
+3. Generate the genesis block hash from the `genesis.json` via [https://github.com/mxmar/eth1genesis](https://github.com/mxmar/eth1genesis), or use the following pregenerated ones:
     - 35M LYX Initial Supply: `0x...`
     - 42M LYX Initial Supply: `0x...`
     - 100M LYX Initial Supply: `0x...`
