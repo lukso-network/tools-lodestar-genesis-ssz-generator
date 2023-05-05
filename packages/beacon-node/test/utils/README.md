@@ -20,7 +20,7 @@ $ yarn build
 
 ## Generate the genesis.szz
 1. Go to `cd packages/beacon-node`
-2. Generate the `deposit_data.json` via [https://github.com/lukso-network/network-genesis-deposit-contract](https://github.com/lukso-network/network-genesis-deposit-contract#fetching-all-the-deposit-data#fetching-all-the-deposit-data), or use the pregenerated one from the `packages/beacon-node/test/utils/fixtures` folder
+2. Generate the `deposit_data.json` via [https://github.com/lukso-network/network-genesis-deposit-contract](https://github.com/lukso-network/network-genesis-deposit-contract#fetching-all-the-deposit-data), or use the pregenerated one from the `packages/beacon-node/test/utils/fixtures` folder
 2. Copy the LUKSO Mainnet [network config files](https://github.com/lukso-network/network-configs/tree/main/mainnet/shared) (`config.yaml`, `genesis.json`) and the `deposit_data.json` to the `packages/beacon-node/test/utils/fixtures` folder
 3. Generate the genesis block hash from the `genesis.json` via [https://github.com/mxmar/eth1genesis](https://github.com/mxmar/eth1genesis), or use the following pregenerated ones:
     - 35M LYX Initial Supply: `0x...`
