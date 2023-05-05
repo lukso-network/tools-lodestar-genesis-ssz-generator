@@ -1,3 +1,14 @@
+# The Loadestar Client for generating the LUKSO `genesis.szz`
+
+📄 To Generate the `genesis.szz` follow the instructions under:
+
+👉 [packages/beacon-node/test/utils/README.md](https://github.com/lukso-network/tools-lodestar-genesis-szz-generator/blob/spike/pos-from-the-start/packages/beacon-node/test/utils/README.md)
+
+
+--------
+
+
+
 <p align="center"><a href="https://chainsafe.github.io/lodestar"><img width="500" title="Lodestar" src='assets/lodestar_icon_text_black_stroke.png' /></a></p>
 
 # Lodestar Ethereum Consensus Implementation
