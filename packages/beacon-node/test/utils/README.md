@@ -1,13 +1,13 @@
-# LUKSO `genesis.szz` state generator
+# LUKSO `genesis.ssz` state generator
 
 ## Installation
 
 ```bash
 # Clone the repo
-$ git clone https://github.com/lukso-network/tools-lodestar-genesis-szz-generator.git
+$ git clone https://github.com/lukso-network/tools-lodestar-genesis-ssz-generator.git
 
 # Change into created folder
-$ cd tools-lodestar-genesis-szz-generator
+$ cd tools-lodestar-genesis-ssz-generator
 
 # Change to the right branch
 $ git checkout spike/pos-from-the-start
@@ -18,7 +18,7 @@ $ yarn install
 $ yarn build
 ```
 
-## Generate the genesis.szz
+## Generate the genesis.ssz
 1. Go to `cd packages/beacon-node`
 2. Generate the `deposit_data.json` via [https://github.com/lukso-network/network-genesis-deposit-contract](https://github.com/lukso-network/network-genesis-deposit-contract#fetching-all-the-deposit-data), or use the pregenerated one from the `packages/beacon-node/test/utils/fixtures` folder
 2. Copy the LUKSO Mainnet [network config files](https://github.com/lukso-network/network-configs/tree/main/mainnet/shared) (`config.yaml`, `genesis.json`) and the `deposit_data.json` to the `packages/beacon-node/test/utils/fixtures` folder
