@@ -1,8 +1,8 @@
-# The Loadestar Client for generating the LUKSO `genesis.szz`
+# The Loadestar Client for generating the LUKSO `genesis.ssz`
 
-📄 To Generate the `genesis.szz` follow the instructions under:
+📄 To Generate the `genesis.ssz` follow the instructions under:
 
-👉 [packages/beacon-node/test/utils/README.md](https://github.com/lukso-network/tools-lodestar-genesis-szz-generator/blob/spike/pos-from-the-start/packages/beacon-node/test/utils/README.md)
+👉 [packages/beacon-node/test/utils/README.md](https://github.com/lukso-network/tools-lodestar-genesis-ssz-generator/blob/spike/pos-from-the-start/packages/beacon-node/test/utils/README.md)
 
 
 --------
