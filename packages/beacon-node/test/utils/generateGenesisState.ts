@@ -22,9 +22,8 @@ const luksoDevnet3030ChainConfig: IChainConfig = chainConfigFromJson(readBeaconP
 
 type QUANTITY = string;
 
-const bellatrixGenesisBlockStateRoot = "0x3e6dbade337e3d23e3ca780fa839ef273d78bde6a478127fd3cc4086d1077c4e";
 const genesisBlockHash = process.argv[2];
-
+const genesisBlockStateRoot = process.argv[3];
 
 const common = Common.fromGethGenesis(executionGenesisJSON, {
     hardfork: 'merge',
@@ -39,7 +38,7 @@ const block = Block.fromBlockData(
             gasLimit: quantityToNum(executionGenesisJSON.gasLimit),
             extraData: fromHexString(executionGenesisJSON.extraData),
             transactionsTrie: ssz.bellatrix.Transactions.hashTreeRoot([]),
-            stateRoot: fromHexString(bellatrixGenesisBlockStateRoot)
+            stateRoot: fromHexString(genesisBlockStateRoot)
         }, { common, skipConsensusFormatValidation: false }),
     },
     { common, skipConsensusFormatValidation: false }
@@ -52,7 +51,7 @@ const devnet3030StateOps: InteropStateOpts = {
     extraData: fromHexString(executionGenesisJSON.extraData),
     gasLimit: quantityToNum(executionGenesisJSON.gasLimit),
     receiptsRoot: fromHexString(`0x` + block.header.receiptTrie.toString("hex")),
-    stateRoot: fromHexString(bellatrixGenesisBlockStateRoot),
+    stateRoot: fromHexString(genesisBlockStateRoot),
     transactionsRoot: ssz.bellatrix.Transactions.hashTreeRoot([])
 }
 
