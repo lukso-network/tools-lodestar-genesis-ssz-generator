@@ -22,16 +22,12 @@ $ yarn build
 1. Go to `cd packages/beacon-node`
 2. Generate the `deposit_data.json` via [https://github.com/lukso-network/network-genesis-deposit-contract](https://github.com/lukso-network/network-genesis-deposit-contract#fetching-all-the-deposit-data), or use the pregenerated one from the `packages/beacon-node/test/utils/fixtures` folder
 2. Copy the LUKSO Mainnet [network config files](https://github.com/lukso-network/network-configs/tree/main/mainnet/shared) (`config.yaml`, `genesis.json`) and the `deposit_data.json` to the `packages/beacon-node/test/utils/fixtures` folder
-3. Generate the **genesis block hash** from the `genesis.json` via [eth1genesis tool](https://github.com/mxmar/eth1genesis), or use the following pregenerated ones:
-    - 35M LYX Initial Supply: `0x...`
-    - 42M LYX Initial Supply: `0x...`
-    - 100M LYX Initial Supply: `0x...`
-4. Generate the **genesis block state root** from the `genesis.json` via [eth1genesis tool](https://github.com/mxmar/eth1genesis), or use the following pregenerated ones:
-   - 35M LYX Initial Supply: `0x...`
-   - 42M LYX Initial Supply: `0x...`
-   - 100M LYX Initial Supply: `0x...`
-5. Run `ts-node --esm test/utils/generateGenesisState.ts <your genesis block hash> <your genesis state root>`
-6. You can find your `genesis.ssz` and `genesis_ssz.json` in the `packages/beacon-node` directory
+3. Generate the **genesis block hash** and **genesis block state root** from the `genesis.json` via [eth1genesis tool](https://github.com/mxmar/eth1genesis), or use the following pregenerated ones:
+    - 35M LYX Initial Supply: block hash: `0x...` state root: `0x...`
+    - 42M LYX Initial Supply: block hash: `0x...` state root: `0x...`
+    - 100M LYX Initial Supply: block hash: `0x...` state root: `0x...`
+4. Run `ts-node --esm test/utils/generateGenesisState.ts <your genesis block hash> <your genesis state root>`
+5. You can find your `genesis.ssz` and `genesis_ssz.json` in the `packages/beacon-node` directory
 
 Example [eth1genesis tool](https://github.com/mxmar/eth1genesis) output:
 ```sh
