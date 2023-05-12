@@ -22,20 +22,19 @@ $ yarn build
 1. Go to `cd packages/beacon-node`
 2. Generate the `deposit_data.json` via [https://github.com/lukso-network/network-genesis-deposit-contract](https://github.com/lukso-network/network-genesis-deposit-contract#fetching-all-the-deposit-data), or use the pregenerated one from the `packages/beacon-node/test/utils/fixtures` folder
 2. Copy the LUKSO Mainnet [network config files](https://github.com/lukso-network/network-configs/tree/main/mainnet/shared) (`config.yaml`, `genesis.json`) and the `deposit_data.json` to the `packages/beacon-node/test/utils/fixtures` folder
-3. Generate the **genesis block hash** and **genesis block state root** from the `genesis.json` via [eth1genesis tool](https://github.com/mxmar/eth1genesis), or use the following pregenerated ones:
-    - 35M LYX Initial Supply: block hash: `0x...` state root: `0x...`
-    - 42M LYX Initial Supply: block hash: `0x...` state root: `0x...`
-    - 100M LYX Initial Supply: block hash: `0x...` state root: `0x...`
+3. Generate the **genesis block hash** and **genesis block state root** from the `genesis.json` via the [Genesis hash calculator](https://github.com/lukso-network/network-genesis-hash-calc), or use the following pregenerated ones:
+    - 35M LYX Initial Supply:
+        - block hash: `0xbe7703028edf8ececa882f81eae15893b06129ab24a86ceaaecf7925524430b0`
+        - state root: `0x5653d878f9aee2bf11a8dedf2bfa656b89b805f232bb44cb14a6681a0fa96e62`
+    - 42M LYX Initial Supply: 
+        - block hash: `0x7f742be7dad62f9a54d5e8581c393e88b9b6c882139fc3313a18e3cb8e288014`
+        - state root: `0x7bef7fff93b34039e3823374000fce0d1b20da03d6f4fca824cf06580536a760`
+    - 100M LYX Initial Supply: 
+        - block hash: `0x022fcabfb7d5f69c48a06d74a2ef819f354e60b009393f24e2010d7d6c69f9bd`
+        - state root: `0xcbc79c23d8f320eec15888344265d6c407cdd28d040c94a626c952e5b68e94d5`
 4. Run `ts-node --esm test/utils/generateGenesisState.ts <your genesis block hash> <your genesis state root>`
 5. You can find your `genesis.ssz` and `genesis_ssz.json` in the `packages/beacon-node` directory
 
-Example [eth1genesis tool](https://github.com/mxmar/eth1genesis) output:
-```sh
-Starting!
-Your genesis block hash is: 0x1fa63f1cd025a2f24c592258511368103ac0efa820b4420f559f52271a449ad4 <--- this is <your genesis block hash> 
-Your genesis block hash stateRoot is: 0x3e6dbade337e3d23e3ca780fa839ef273d78bde6a478127fd3cc4086d1077c4e <--- this is <your genesis state root>
-Done!
-```
 
 ## Tests
 
