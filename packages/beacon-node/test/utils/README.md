@@ -16,9 +16,9 @@ $ git checkout spike/pos-from-the-start
 $ yarn global add ts-node
 
 # Install dependencies and build
+$ lerna bootstrap
 $ yarn install
-...
-$ yarn build 
+$ yarn build
 ```
 
 ## Generate the genesis.ssz
