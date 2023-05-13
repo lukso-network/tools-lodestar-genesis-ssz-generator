@@ -12,10 +12,13 @@ $ cd tools-lodestar-genesis-ssz-generator
 # Change to the right branch
 $ git checkout spike/pos-from-the-start
 
+# Install ts-node globally
+$ yarn global add ts-node
+
 # Install dependencies and build
 $ yarn install
 ...
-$ yarn build
+$ yarn build 
 ```
 
 ## Generate the genesis.ssz
