@@ -35,7 +35,7 @@ $ yarn build
     - 100M LYX Initial Supply: 
         - block hash: `0x022fcabfb7d5f69c48a06d74a2ef819f354e60b009393f24e2010d7d6c69f9bd`
         - state root: `0xcbc79c23d8f320eec15888344265d6c407cdd28d040c94a626c952e5b68e94d5`
-4. Run `ts-node --esm test/utils/generateGenesisState.ts <your genesis block hash> <your genesis state root>`
+4. Run `ts-node --esm test/utils/generateGenesisState.ts <your genesis block hash> <your genesis state root>` (Takes around 10min!)
 5. You can find your `genesis.ssz` and `genesis_ssz.json` in the `packages/beacon-node` directory
 
 
