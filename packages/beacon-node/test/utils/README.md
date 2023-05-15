@@ -27,14 +27,14 @@ $ yarn build
 2. Copy the LUKSO Mainnet [network config files](https://github.com/lukso-network/network-configs/tree/main/mainnet/shared) (`config.yaml`, `genesis.json`) and the `deposit_data.json` to the `packages/beacon-node/test/utils/fixtures` folder
 3. Generate the **genesis block hash** and **genesis block state root** from the `genesis.json` via the [Genesis hash calculator](https://github.com/lukso-network/network-genesis-hash-calc), or use the following pregenerated ones:
     - 35M LYX Initial Supply:
-        - block hash: `0x2c72687b37cd99fa09d31859e77254ab33f36c40c8b6b30256e53e6b615249e2`
-        - state root: `0x39edcdf13ea24fbd04fdbc02b0aac305af61d098a9b693d9989b319a5706c1d7`
+        - block hash: `0xde30ee79cc0db657b94ab81ef0fabc28a12c9de0afe06c260f7e8004d46d6852`
+        - state root: `0xede20a73c4fab8b11bdca866dde27f0f9fb91a49ca758ab3323f24f741c01891`
     - 42M LYX Initial Supply: 
-        - block hash: `0x1128be421fab40952edd402afd2f40b795d3ca5d5b06246405d5cb9e2bdd7b12`
-        - state root: `0x39edcdf13ea24fbd04fdbc02b0aac305af61d098a9b693d9989b319a5706c1d7`
+        - block hash: `0x5df88817dfb9b00d8ef142370671e8a9bc00c548ab78fbaf205df53db2b24a26`
+        - state root: `0xc5029d9940f62a897b231b3ccdb71c1bb79ecce029ce3309fe99f18820836115`
     - 100M LYX Initial Supply: 
-        - block hash: `0xf8a6f1100602c027b5ffe64169fdeb36053c66faf753d83547b0dbdf7efa8ae0`
-        - state root: `0xa98743b7d88c0262f12004994fe998e42e909c49e91b2218f5305fdec3ce1dfc`
+        - block hash: `0x62ddc7f9c724b39cf9df1e6c8fe0f738613a0597718b1de5678e768b8493d1be`
+        - state root: `0xcf9791846af3d21d47a2029c17ec4c10a7917bf16c275f14ddb5858dc1fa1833`
 4. Run `ts-node --esm test/utils/generateGenesisState.ts <your genesis block hash> <your genesis state root>` (Takes around 10min!)
 5. You can find your `genesis.ssz` and `genesis_ssz.json` in the `packages/beacon-node` directory
 
